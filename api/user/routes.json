@@ -3,5 +3,10 @@
     "method": "GET",
     "path": "/",
     "handler": "find"
+  },
+  {
+    "method": "GET",
+    "path": "/count",
+    "handler": "count"
   }
 ]

@@ -13,10 +13,16 @@
     "mysql"
   ],
   "author": "Kimp13",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kimp13/moderngymnasium.git"
+  },
   "license": "UNLICENSED",
   "dependencies": {
+    "bcrypt": "^5.0.0",
     "bookshelf": "^1.2.0",
     "dotenv": "latest",
+    "jsonwebtoken": "^8.5.1",
     "knex": "^0.21.5",
     "koa": "^2.13.0",
     "mysql": "^2.18.1"
