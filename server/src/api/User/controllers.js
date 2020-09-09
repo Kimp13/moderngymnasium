@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const mg = global.mg;
+const pick = require('lodash/pick');
 
 module.exports = {
   find: async (req, res) => {
@@ -21,10 +21,13 @@ module.exports = {
     const { username, password } = req.body;
 
     if (
-      /[^0-9a-zA-Z#$*_]/.test(username) ||
-      password.length < 8
+      !password ||
+      password.length < 8 ||
+      /[^0-9a-zA-Z#$*_]/.test(username)
     ) {
       res.status = 400;
+      res.end('Bad Request');
+
       return;
     }
 
@@ -44,6 +47,9 @@ module.exports = {
         if (jwt) {
           res.status = 200;
           res.end(JSON.stringify({
+            user: Object.assign({
+              isAuthenticated: true
+            }, pick(user, ['first_name', 'last_name', 'username', 'permissions'])),
             jwt
           }));
 
@@ -55,6 +61,7 @@ module.exports = {
         console.log(`Jwt test failed! It's ${jwt}`);
 
         res.status = 500;
+        res.end('Internal server error');
       } else {
 
       }
@@ -62,6 +69,7 @@ module.exports = {
       console.log(e);
 
       res.status = 500;
+      res.end('Internal server error');
 
       return;
     }

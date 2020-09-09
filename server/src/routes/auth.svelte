@@ -2,13 +2,12 @@
   export async function preload(page, session) {
     return {
       props: await (await this.fetch(session.apiUrl + "/users/count")).json(),
-      apiUrl: session.apiUrl,
+      apiUrl: session.apiUrl
     };
   }
 </script>
 
 <script>
-  import { getContext } from "svelte";
   import { goto, stores } from "@sapper/app";
   import { postApi } from "../../utils/requests.js";
   import { setCookie } from "../../utils/cookies";
@@ -17,8 +16,8 @@
   let username, password, passwordRepeat,
       usernameError, passwordError, passwordRepeatError,
       signUpPromise = new Promise((resolve, reject) => resolve(null));
-  const user = getContext("user"),
-        { page } = stores();
+  const { page, session } = stores();
+  const user = $session.user;
 
   $: if (username !== undefined) {
     if (username.length === 0) {
@@ -55,7 +54,7 @@
   const logout = () => goto("/logout");
   const redirect = () => goto($page.query.redirectTo || "/");
 
-  const signup = (e) => {
+  const signup = () => {
     if (username && password && passwordRepeat) {
       if (!(usernameError || passwordError || passwordRepeatError)) {
         signUpPromise = new Promise((resolve, reject) => {
@@ -81,7 +80,13 @@
               maxAge: 1296000,
             });
 
-            window.location.href = "/";
+            session.update(oldSession => {
+              oldSession.user = json.user;
+
+              return oldSession;
+            });
+
+            goto('/');
           },
           (e) => {
             console.log(e);

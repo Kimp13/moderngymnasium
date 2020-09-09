@@ -1,40 +1,11 @@
 <script context=module>
-
-  export async function preload (page, session) {
-    try {
-      const user = (await (await this.fetch(session.apiUrl + '/connects', {
-        credentials: 'include'
-      })).json()).user;
-
-      if (
-        !user.isAuthenticated &&
-        page.path.substring(0, 5) !== '/auth'
-      ) {
-        this.redirect(307, ('/auth'));
-
-        return {};
-      }
-
-      return {
-        user
-      };
-    } catch (e) {
-      console.log(e);
+  export async function preload(page, session) {
+    if (!session.user.isAuthenticated && page.path.substring(0, 5) !== "/auth") {
+      this.redirect(307, "/auth");
     }
+
+    return new Object();
   }
-
-</script>
-
-<main>
-	<slot />
-</main>
-
-<script>
-  import { setContext } from 'svelte';
-
-  export let user;
-
-  setContext('user', user);
 </script>
 
 <style global lang="sass">
@@ -84,3 +55,7 @@
     html
       font-size: calc(1vw + 1vh)
 </style>
+
+<main>
+  <slot />
+</main>

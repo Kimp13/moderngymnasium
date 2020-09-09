@@ -28,12 +28,12 @@ export const getApiResponse = async (path, query, auth) => {
   return await response.json();
 };
 
-export const postApi = async (path, query) => (
-  await fetch(path, {
+export const postApi = async (path, query) => {
+  return await fetch(path, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(query)
-  })
-);
+  });
+};

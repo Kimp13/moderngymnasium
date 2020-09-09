@@ -2,10 +2,10 @@ const set = require('lodash/set');
 
 module.exports = async jwt => {
   if (jwt) {
-    const payload = await global.mg.services.jwt.verify(jwt);
+    const payload = await mg.services.jwt.verify(jwt);
 
     if (payload) {
-      let user = (await global.mg.models.User.where('id', payload.id).fetch({
+      let user = (await mg.models.User.where('id', payload.id).fetch({
         withRelated: ['role.permissions']
       })).toJSON();
 

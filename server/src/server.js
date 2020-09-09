@@ -17,8 +17,8 @@ import fs from 'fs';
 
 // utilities
 import _ from 'lodash';
+import getUser from "../utils/getUser";
 import getRouteName from '../utils/getRouteName';
-import { createContext } from 'vm';
 
 dotenv.config();
 
@@ -52,8 +52,7 @@ if (!API_URL) {
  * Global variable containing server cache, plugins, models, functions
  * @returns JS object
  */
-const mg = new Object();
-global.mg = mg;
+global.mg = new Object();
 
 /**
  * Main function of the server.
@@ -62,133 +61,174 @@ global.mg = mg;
 const main = () => {
   // proceed if connected to database
   knex.raw('select 1 + 1 as testValue').then(() => {
-    // gathering models
-    fs.readdir(modelsPath, (err, files) => {
-      mg.paths = new Object();
-      mg.models = new Object();
-      mg.services = new Object();
-      mg.cache = new Object();
-      
-      for (let i = 0; i < files.length; i += 1) {
-        let currentPath = path.join(modelsPath, files[i]),
-            modelPath = path.join(currentPath, 'model.js'),
-            servicesPath = path.join(currentPath, 'services.js'),
-            routesPath = path.join(currentPath, 'routes.json'),
-            controllersPath = path.join(currentPath, 'controllers.js'),
-            routeName = getRouteName(files[i]);
+      fs.readdir(modelsPath, (err, files) => {
+        if (err) {
+          console.log('You have no API. I don\'t want to start the server.');
+          return;
+        };
   
-        fs.access(modelPath, fs.F_OK, err => {
-          if (err) return;
+        mg.paths = new Object();
+        mg.models = new Object();
+        mg.services = new Object();
+        mg.cache = new Object();
+
+        Promise.all(
+          files.map(file => new Promise((resolve, reject) => {
+            let currentPath = path.join(modelsPath, file),
+                modelPath = path.join(currentPath, 'model.js'),
+                servicesPath = path.join(currentPath, 'services.js'),
+                routesPath = path.join(currentPath, 'routes.json'),
+                controllersPath = path.join(currentPath, 'controllers.js'),
+                routeName = getRouteName(file);
+      
+            Promise.all([
+              new Promise((resolve, reject) => {
+                fs.access(modelPath, fs.F_OK, err => {
+                  if (err) {
+                    resolve();
+                    return;
+                  }
+                  
+                  let model = require(modelPath);
           
-          let model = require(modelPath);
-  
-          knex.schema.hasTable(model.tableName).then(exists => {
-            if (exists) {
-              mg.models[files[i]] = bookshelf.model(files[i], {
-                requireFetch: false,
-                ...model
-              });
+                  knex.schema.hasTable(model.tableName).then(exists => {
+                    if (exists) {
+                      mg.models[file] = bookshelf.model(file, {
+                        requireFetch: false,
+                        ...model
+                      });
+        
+                      if (file.toLowerCase() === 'user') {
+                        mg
+                          .models[file]
+                          .count()
+                          .then(count => (mg.cache.usersCount = count));
+                      }
+                    }
+                    
+                    resolve();
+                  });
+                });
+              }),
+              new Promise((resolve, reject) => {
+                fs.access(routesPath, fs.F_OK, err => {
+                  if (err) {
+                    resolve();
+                    return;
+                  }
+          
+                  fs.access(controllersPath, fs.F_OK, err => {
+                    let routes = require(routesPath),
+                        controllers = require(controllersPath);
+            
+                    for (let j = 0; j < routes.length; j += 1) {
+                      routes[j].method = routes[j].method.toUpperCase();
+          
+                      if (
+                        routes[j].path.charAt(
+                          routes[j].path.length - 1
+                        ) !== '/'
+                      ) {
+                        routes[j].path += '/';
+                      }
+              
+                      if (!mg.paths.hasOwnProperty(routes[j].method)) {
+                        mg.paths[routes[j].method] = new Object();
+                      }
+              
+                      mg.paths[routes[j].method][`/${routeName}${routes[j].path}`] = (
+                        routes[j].handler === 'default' ?
+                          controllers :
+                          controllers[routes[j].handler]
+                      );
 
-              if (files[i].toLowerCase() === 'user') {
-                mg
-                  .models[files[i]]
-                  .count()
-                  .then(count => (mg.cache.usersCount = count));
-              }
-            }
-          });
-        });
-  
-        fs.access(servicesPath, fs.F_OK, err => {
-          if (err) return;
-  
-          mg.services[_.camelCase(files[i])] = require(servicesPath);
-        });
-  
-        fs.access(routesPath, fs.F_OK, err => {
-          if (err) return;
-  
-          fs.access(controllersPath, fs.F_OK, err => {
-            let routes = require(routesPath),
-                controllers = require(controllersPath);
-    
-            for (let j = 0; j < routes.length; j += 1) {
-              routes[j].method = routes[j].method.toUpperCase();
-  
-              if (
-                routes[j].path.charAt(
-                  routes[j].path.length - 1
-                ) !== '/'
-              ) {
-                routes[j].path += '/';
-              }
-      
-              if (!mg.paths.hasOwnProperty(routes[j].method)) {
-                mg.paths[routes[j].method] = new Object();
-              }
-      
-              mg.paths[routes[j].method][`/${routeName}${routes[j].path}`] = (
-                routes[j].handler === 'default' ?
-                  controllers :
-                  controllers[routes[j].handler]
+                      resolve();
+                    }
+                  });
+                });
+              }),
+              new Promise((resolve, reject) => {
+                fs.access(servicesPath, fs.F_OK, err => {
+                  if (err) {
+                    resolve();
+                    return;
+                  }
+          
+                  mg.services[_.camelCase(file)] = require(servicesPath);
+                  resolve();
+                });
+              })
+            ]).then(resolve);
+          }))
+        ).then(() => {
+          polka()
+            .use(compression({ threshold: 0 }))
+            .use(sirv('static', { dev }))
+            .use(bodyParser.json({ extended: true }))
+            .use(async (req, res, next) => {
+              const start = new Date();
+          
+              await next();
+          
+              const ms = Date.now() - start.getTime();
+          
+              console.log(
+                `${start.toLocaleString()} | ${req.method} on ` +
+                req.url + ' took ' + ms + ' ms'
               );
-            }
-          });
+            })
+            .use(async (req, res, next) => {
+              req.cookies = cookie.parse(req.headers.cookie || '');
+      
+              const path = /^\/api((\/([\w_\.~-]|(%[\dA-F]))*)+)?(?=\?|$)/.exec(req.url);
+      
+              if (path) {
+                req.path = path[1] ? (
+                  path[1].charAt(path[1].length - 1) === '/' ?
+                  path[1] :
+                  path[1] + '/'
+                ) : '/';
+      
+                if (
+                  mg.paths.hasOwnProperty(req.method) &&
+                  mg.paths[req.method].hasOwnProperty(req.path)
+                ) {
+                  await mg.paths[req.method][req.path](req, res);
+                } else {
+                  res.status = 404;
+                }
+              } else {
+                await next();
+              }
+      
+              return;
+            })
+            .use(async (req, res, next) => {
+              let user = await getUser(req.cookies.jwt);
+      
+              if (user) {
+                user = Object.assign({
+                  isAuthenticated: true
+                }, _.pick(user, ['first_name', 'last_name', 'username', 'permissions']))
+              } else {
+                user = {
+                  isAuthenticated: false
+                }
+              }
+              
+              sapper.middleware({
+                session: () => {
+                  return {
+                    apiUrl: API_URL,
+                    user
+                  };
+                }
+              })(req, res, next);
+            })
+            .listen(PORT, err => {
+              if (err) console.log('error', err);
+            });
         });
-      }
-    });
-
-    polka()
-      .use(compression({ threshold: 0 }))
-      .use(sirv('static', { dev }))
-      .use(bodyParser.urlencoded({ extended: true }))
-      .use(async (req, res, next) => {
-        const start = new Date();
-    
-        await next();
-    
-        const ms = Date.now() - start.getTime();
-    
-        console.log(
-          `${start.toLocaleString()} | ${req.method} on ` +
-          req.url + ' took ' + ms + ' ms'
-        );
-      })
-      .use(async (req, res, next) => {
-        const path = /^\/api((\/([\w_\.~-]|(%[\dA-F]))*)+)?(?=\?|$)/.exec(req.url);
-
-        if (path) {
-          req.path = path[1] ? (
-            path[1].charAt(path[1].length - 1) === '/' ?
-            path[1] :
-            path[1] + '/'
-          ) : '/';
-
-          if (
-            mg.paths.hasOwnProperty(req.method) &&
-            mg.paths[req.method].hasOwnProperty(req.path)
-          ) {
-            req.cookies = cookie.parse(req.headers.cookie || '');
-
-            await mg.paths[req.method][req.path](req, res);
-          } else {
-            res.status = 404;
-          }
-        } else {
-          await next();
-        }
-
-        return;
-      })
-      .use(sapper.middleware({
-        session: () => {
-          return {
-            apiUrl: API_URL
-          };
-        }
-      }))
-      .listen(PORT, err => {
-        if (err) console.log('error', err);
       });
   });
 };
