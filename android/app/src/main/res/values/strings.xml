@@ -13,12 +13,31 @@
     </string>
 
     <!-- User Interface strings -->
-    <string name="app_name">&app_name;</string>
-    <string name="login_activity_label">&sign_in;&#09;•&#09;&app_name;</string>
-    <string name="username_hint">Username</string>
-    <string name="password_hint">Password</string>
-    <string name="sign_in">&sign_in;</string>
-    <string name="menu_create">Announce</string>
-    <string name="menu_inbox">Announcements</string>
-    <string name="menu_profile">Profile</string>
-</resources>
+        <!-- Global strings -->
+            <string name="app_name">&app_name;</string>
+
+        <!-- Network-related strings -->
+            <string name="server_unavailable">
+                Our server is unavailable. Please, retry after a few minutes
+            </string>
+            <string name="no_internet">Your device has no internet connection</string>
+
+        <!-- Login Activity strings -->
+            <string name="login_activity_label">&sign_in;&#09;•&#09;&app_name;</string>
+            <string name="username_hint">Username</string>
+            <string name="password_hint">Password</string>
+            <string name="enter_username">Enter username</string>
+            <string name="username_incorrect">
+                Username must only contain english letters, digits and signs #, $, *, _
+            </string>
+            <string name="enter_password">Enter password</string>
+            <string name="password_too_short">Password must contain at least 8 characters</string>
+            <string name="invalid_credentials">Couldn\'t log in: wrong username or password</string>
+            <string name="sign_in">&sign_in;</string>
+
+        <!-- Main Activity strings -->
+            <!-- Bottom Nav strings -->
+                <string name="menu_create">Announce</string>
+                <string name="menu_inbox">Announcements</string>
+                <string name="menu_profile">Profile</string>
+    </resources>

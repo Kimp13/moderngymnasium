@@ -1,0 +1,12 @@
+[
+  {
+    "method": "GET",
+    "path": "/getMine",
+    "handler": "find"
+  },
+  {
+    "method": "GET",
+    "path": "/countMine",
+    "handler": "count"
+  }
+]

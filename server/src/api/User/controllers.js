@@ -10,7 +10,7 @@ module.exports = {
   },
 
   count: async (req, res) => {
-    res.status = 200;
+    res.statusCode = 200;
     res.end(JSON.stringify({
       count: mg.cache.usersCount
     }));
@@ -26,8 +26,8 @@ module.exports = {
       password.length < 8 ||
       /[^0-9a-zA-Z#$*_]/.test(username)
     ) {
-      res.status = 400;
-      res.end('Bad Request');
+      res.statusCode = 400;
+      res.end('{}');
 
       return;
     }
@@ -46,7 +46,7 @@ module.exports = {
         });
 
         if (jwt) {
-          res.status = 200;
+          res.statusCode = 200;
           res.end(JSON.stringify({
             user: Object.assign({
               isAuthenticated: true
@@ -61,16 +61,16 @@ module.exports = {
 
         console.log(`Jwt test failed! It's ${jwt}`);
 
-        res.status = 500;
-        res.end('Internal server error');
+        res.statusCode = 500;
+        res.end('{}');
       } else {
 
       }
     } catch (e) {
       console.log(e);
 
-      res.status = 500;
-      res.end('Internal server error');
+      res.statusCode = 500;
+      res.end('{}');
 
       return;
     }
@@ -101,7 +101,7 @@ module.exports = {
 
         user.permissions = parsePermissions(user.role.permissions);
 
-        res.status = 200;
+        res.statusCode = 200;
         res.end(JSON.stringify({
           jwt,
           data: pick(user, ['first_name', 'last_name', 'username', 'permissions'])
@@ -110,14 +110,14 @@ module.exports = {
         return;
       }
 
-      res.status = 401;
-      res.end('Unauthorized');
+      res.statusCode = 401;
+      res.end('{}');
 
       return;
     }
 
-    res.status = 400;
-    res.end('Bad Request');
+    res.statusCode = 400;
+    res.end('{}');
 
     return;
   }

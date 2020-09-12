@@ -53,6 +53,7 @@ if (!API_URL) {
  * @returns JS object
  */
 global.mg = new Object();
+mg.knex = knex;
 
 /**
  * Main function of the server.
@@ -179,16 +180,24 @@ const main = () => {
             })
             .use(async (req, res, next) => {
               req.cookies = cookie.parse(req.headers.cookie || '');
+
+              const questionMarkIndex = req.url.indexOf('?');
+
+              if (questionMarkIndex === -1) {
+                req.path = req.url;
+                req.search = '';
+              } else {
+                req.path = req.url.substring(0, questionMarkIndex);
+                req.search = req.url.substring(questionMarkIndex + 1);
+              }
       
-              const path = /^\/api((\/([\w_\.~-]|(%[\dA-F]))*)+)?(?=\?|$)/.exec(req.url);
-      
-              if (path) {
-                req.path = path[1] ? (
-                  path[1].charAt(path[1].length - 1) === '/' ?
-                  path[1] :
-                  path[1] + '/'
-                ) : '/';
-      
+              if (req.path.substring(0, 4) === '/api') {
+                req.path = req.path.substring(4);
+
+                if (req.path.charAt(req.path.length - 1) !== '/') {
+                  req.path += '/';
+                }
+
                 if (
                   mg.paths.hasOwnProperty(req.method) &&
                   mg.paths[req.method].hasOwnProperty(req.path)

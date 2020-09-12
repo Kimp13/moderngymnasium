@@ -7,10 +7,24 @@
 
 <resources>
     <string name="app_name">&app_name;</string>
+
+    <string name="server_unavailable">
+        Сервер недоступен. Пожалуйста, повторите попытку через пару минут
+    </string>
+    <string name="no_internet">Ваше устройство не подключено к интернету</string>
+
     <string name="login_activity_label">&sign_in;&#09;•&#09;&app_name;</string>
     <string name="username_hint">Логин</string>
     <string name="password_hint">Пароль</string>
     <string name="sign_in">&sign_in;</string>
+    <string name="enter_username">Введите логин</string>
+    <string name="username_incorrect">
+        Логин может содержать только английские буквы, цифры и знаки #, $, *, _
+    </string>
+    <string name="enter_password">Введите пароль</string>
+    <string name="password_too_short">Пароль должен содержать как минимум 8 символов</string>
+    <string name="invalid_credentials">Авторизация неудачна: неверный логин или пароль</string>
+
     <string name="menu_create">Объявить</string>
     <string name="menu_inbox">Объявления</string>
     <string name="menu_profile">Профиль</string>
