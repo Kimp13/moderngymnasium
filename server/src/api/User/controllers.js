@@ -1,11 +1,31 @@
 const bcrypt = require('bcrypt');
 const pick = require('lodash/pick');
+const jsonify = require("../../../utils/searchToJson");
 const parsePermissions = require('../../../utils/permissionArrayToObject');
 
 module.exports = {
   find: async (req, res) => {
-    res.end('OK');
+    const id = Number(jsonify(req.search).id);
 
+    if (!isNaN(id)) {
+      const user = await mg.knex
+        .select(
+          'id',
+          'first_name',
+          'last_name',
+          'role_id',
+          'class_id'
+        )
+        .from('user')
+        .where('id', id);
+
+      res.statusCode = 200;
+      res.end(JSON.stringify(user[0]));
+      return;
+    }
+
+    res.statusCode = 400;
+    res.end('{}');
     return;
   },
 

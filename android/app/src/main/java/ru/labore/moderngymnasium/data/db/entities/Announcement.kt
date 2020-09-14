@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
+import org.threeten.bp.ZonedDateTime
 
 @Entity(tableName = "announcement")
 data class AnnouncementEntity(
@@ -13,9 +14,9 @@ data class AnnouncementEntity(
     @SerializedName("created_at")
     val createdAt: Int,
 
-    @SerializedName("updated_at")
-    val updatedAt: Int,
+    @SerializedName("author_id")
+    val authorId: Int,
 
     val text: String,
-    val authorId: Int
+    var updatedAt: ZonedDateTime? = null
 )

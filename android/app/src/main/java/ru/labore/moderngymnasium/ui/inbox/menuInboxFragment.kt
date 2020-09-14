@@ -44,11 +44,12 @@ class menuInboxFragment : ScopedFragment(), DIAware {
 
     private fun bindUI() = launch {
         val announcements = viewModel.announcements.await()
+        var text = ""
 
-        announcements.observe(viewLifecycleOwner, {
-            if (it != null) {
-                mainTextView.text = it.size.toString()
-            }
-        })
+        announcements.forEach {
+            text = text.plus(it.toString())
+        }
+
+        mainTextView.text = if (text.isEmpty()) "No results found" else text
     }
 }

@@ -1,8 +1,6 @@
 package ru.labore.moderngymnasium.data.repository
 
 import android.content.Context
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -11,8 +9,10 @@ import kotlinx.coroutines.withContext
 import org.threeten.bp.ZonedDateTime
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.db.daos.AnnouncementEntityDao
+import ru.labore.moderngymnasium.data.db.daos.UserEntityDao
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementWithAuthor
+import ru.labore.moderngymnasium.data.db.entities.UserEntity
 import ru.labore.moderngymnasium.data.network.AppNetwork
 import ru.labore.moderngymnasium.data.network.SignIn
 import ru.labore.moderngymnasium.data.sharedpreferences.entities.User
@@ -20,6 +20,7 @@ import ru.labore.moderngymnasium.data.sharedpreferences.entities.User
 class AppRepository(
     private val context: Context,
     private val announcementEntityDao: AnnouncementEntityDao,
+    private val userEntityDao: UserEntityDao,
     private val appNetwork: AppNetwork
 ) {
     private val gson = Gson()
@@ -37,8 +38,12 @@ class AppRepository(
             user = gson.fromJson(userString, User::class.java)
         }
 
-        appNetwork.fetchedAnnouncementEntity.observeForever {
+        appNetwork.fetchedAnnouncementEntities.observeForever {
             persistFetchedAnnouncements(it)
+        }
+
+        appNetwork.fetchedUserEntity.observeForever {
+            persistFetchedUser(it)
         }
     }
 
@@ -50,18 +55,26 @@ class AppRepository(
         editor.apply()
     }
 
-    suspend fun getAnnouncements(offset: Int = 0, limit: Int = 10): LiveData<Array<AnnouncementWithAuthor>> {
+    suspend fun getAnnouncements(offset: Int = 0, limit: Int = 10): Array<AnnouncementWithAuthor> {
         if (user == null) {
-            val result: LiveData<Array<AnnouncementWithAuthor>> by lazy {
-                MutableLiveData(emptyArray())
-            }
-
-            return result
+            return emptyArray()
         }
 
+        println(
+            announcementEntityDao.
+            isAnnouncementUpdateNeeded(offset).toString())
+
         return withContext(Dispatchers.IO) {
-            if (isAnnouncementsFetchNeeded(ZonedDateTime.now().minusHours(1))) {
-                appNetwork.fetchAnnouncements(user!!.jwt, offset, limit)
+            if (
+                announcementEntityDao.
+                        isAnnouncementUpdateNeeded(offset)
+            ) {
+                appNetwork.fetchAnnouncements(
+                    userEntityDao,
+                    user!!.jwt,
+                    offset,
+                    limit
+                )
             }
 
             return@withContext announcementEntityDao.getAnnouncements(offset, limit)
@@ -69,14 +82,22 @@ class AppRepository(
     }
 
     private fun persistFetchedAnnouncements(fetchedAnnouncements: Array<AnnouncementEntity>) {
+        val now = ZonedDateTime.now()
+
+        fetchedAnnouncements.forEach {
+            it.updatedAt = now
+        }
+
         GlobalScope.launch(Dispatchers.IO) {
             announcementEntityDao.upsert(fetchedAnnouncements)
         }
     }
 
-    private fun isAnnouncementsFetchNeeded(lastFetchTime: ZonedDateTime): Boolean {
-        val tenMinutesAgo = ZonedDateTime.now().minusMinutes(10)
+    private fun persistFetchedUser(fetchedUser: UserEntity) {
+        fetchedUser.updatedAt = ZonedDateTime.now()
 
-        return lastFetchTime.isBefore(tenMinutesAgo)
+        GlobalScope.launch(Dispatchers.IO) {
+            userEntityDao.upsert(fetchedUser)
+        }
     }
 }

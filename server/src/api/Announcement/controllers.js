@@ -34,6 +34,7 @@ module.exports = {
             'announcement_class_role.role_id',
             user.role_id
           )
+          .orderBy('id', 'desc')
           .offset(offset)
           .limit(limit);
 

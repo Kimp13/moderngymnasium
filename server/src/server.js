@@ -162,11 +162,6 @@ const main = () => {
             ]).then(resolve);
           }))
         ).then(() => {
-          mg.services.announcement.getUsers(3)
-            .then(users => {
-              console.log(users);
-            });
-
           polka()
             .use(compression({ threshold: 0 }))
             .use(sirv('static', { dev }))
