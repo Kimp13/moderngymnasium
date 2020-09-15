@@ -11,15 +11,10 @@ interface AnnouncementEntityDao {
     fun upsert(announcements: Array<AnnouncementEntity>)
 
     @Query("""
-        select not exists(select 1 from announcement
-        limit 1 offset :offset) or (
-        select
-        announcement.updatedAt <
-        datetime('now', 'localtime', '-1 day')
-        from announcement
-        limit 1 offset :offset)
+        select * from announcement
+        limit 1 offset :offset
     """)
-    fun isAnnouncementUpdateNeeded(offset: Int): Boolean
+    suspend fun getAnnouncementAtOffset(offset: Int): AnnouncementEntity?
 
     @Transaction
     @Query("""

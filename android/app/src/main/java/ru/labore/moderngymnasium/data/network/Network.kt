@@ -7,22 +7,25 @@ import kotlinx.coroutines.*
 import okhttp3.Interceptor
 import okhttp3.Response
 import org.threeten.bp.ZonedDateTime
+import ru.labore.moderngymnasium.data.db.daos.RoleEntityDao
 import ru.labore.moderngymnasium.data.db.daos.UserEntityDao
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
+import ru.labore.moderngymnasium.data.db.entities.RoleEntity
 import ru.labore.moderngymnasium.data.db.entities.UserEntity
 
 class AppNetwork(context: Context) : Interceptor {
     private val appContext = context.applicationContext
     val fetchedAnnouncementEntities = MutableLiveData<Array<AnnouncementEntity>>()
     val fetchedUserEntity = MutableLiveData<UserEntity>()
+    val fetchedRoleEntity = MutableLiveData<RoleEntity>()
 
     suspend fun fetchAnnouncements(
         userEntityDao: UserEntityDao,
+        roleEntityDao: RoleEntityDao,
         jwt: String,
         offset: Int,
         limit: Int
     ) {
-        println("Fetching announcements...")
         val announcements = FetchAnnouncements(
             appContext,
             this,
@@ -33,16 +36,25 @@ class AppNetwork(context: Context) : Interceptor {
         val oneDayBefore = ZonedDateTime.now().minusDays(1)
         List(announcements.size) {
             GlobalScope.launch {
-                val user = userEntityDao
+                var user = userEntityDao
                     .getUserLastUpdatedTime(announcements[it].authorId)
                 if (
                     user?.updatedAt?.isBefore(oneDayBefore) != false
                 ) {
-                    fetchedUserEntity.postValue(FetchUser(
+                    user = FetchUser(
                         appContext,
                         this@AppNetwork,
                         announcements[it].authorId
-                    ))
+                    )
+
+                    if (
+                        user.roleId == null ||
+                        roleEntityDao.getRole(user.roleId!!) == null
+                    ) {
+                        
+                    }
+
+
                 }
             }
         }.joinAll()

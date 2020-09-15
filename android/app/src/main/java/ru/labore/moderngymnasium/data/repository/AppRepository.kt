@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 import org.threeten.bp.ZonedDateTime
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.db.daos.AnnouncementEntityDao
+import ru.labore.moderngymnasium.data.db.daos.RoleEntityDao
 import ru.labore.moderngymnasium.data.db.daos.UserEntityDao
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementWithAuthor
@@ -21,6 +22,7 @@ class AppRepository(
     private val context: Context,
     private val announcementEntityDao: AnnouncementEntityDao,
     private val userEntityDao: UserEntityDao,
+    private val roleEntityDao: RoleEntityDao,
     private val appNetwork: AppNetwork
 ) {
     private val gson = Gson()
@@ -55,22 +57,25 @@ class AppRepository(
         editor.apply()
     }
 
-    suspend fun getAnnouncements(offset: Int = 0, limit: Int = 10): Array<AnnouncementWithAuthor> {
+    suspend fun getAnnouncements(offset: Int = 0, limit: Int = 25): Array<AnnouncementWithAuthor> {
         if (user == null) {
             return emptyArray()
         }
 
-        println(
-            announcementEntityDao.
-            isAnnouncementUpdateNeeded(offset).toString())
+        val announcement =
+            announcementEntityDao
+                .getAnnouncementAtOffset(offset + limit)
+        val now = ZonedDateTime.now()
+        val tenMinutesBefore = now.minusMinutes(10)
 
         return withContext(Dispatchers.IO) {
             if (
-                announcementEntityDao.
-                        isAnnouncementUpdateNeeded(offset)
+                announcement?.updatedAt?.isAfter(now) != false ||
+                announcement.updatedAt!!.isBefore(tenMinutesBefore)
             ) {
                 appNetwork.fetchAnnouncements(
                     userEntityDao,
+                    roleEntityDao,
                     user!!.jwt,
                     offset,
                     limit

@@ -16,8 +16,10 @@ class MGApplication() : Application(), DIAware {
         bind() from singleton { AppDatabase(instance()) }
         bind() from singleton { instance<AppDatabase>().announcementEntityDao() }
         bind() from singleton { instance<AppDatabase>().userEntityDao() }
+        bind() from singleton { instance<AppDatabase>().roleEntityDao() }
         bind() from singleton { AppNetwork(instance()) }
         bind() from singleton { AppRepository(
+            instance(),
             instance(),
             instance(),
             instance(),
