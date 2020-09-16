@@ -163,8 +163,6 @@ const main = () => {
           }))
         ).then(() => {
           polka()
-            .use(compression({ threshold: 0 }))
-            .use(sirv('static', { dev }))
             .use(bodyParser.json({ extended: true }))
             .use(async (req, res, next) => {
               const start = new Date();
@@ -204,14 +202,17 @@ const main = () => {
                 ) {
                   await mg.paths[req.method][req.path](req, res);
                 } else {
-                  res.status = 404;
+                  res.statusCode = 404;
+                  res.end('{}');
                 }
+                
+                return;
               } else {
                 await next();
               }
-      
-              return;
             })
+            .use(compression({ threshold: 0 }))
+            .use(sirv('static', { dev }))
             .use(async (req, res, next) => {
               let user = await getUser(req.cookies.jwt);
       

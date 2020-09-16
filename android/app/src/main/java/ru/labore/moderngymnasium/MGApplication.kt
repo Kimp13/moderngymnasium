@@ -7,6 +7,7 @@ import org.kodein.di.android.x.androidXModule
 import ru.labore.moderngymnasium.data.db.AppDatabase
 import ru.labore.moderngymnasium.data.network.AppNetwork
 import ru.labore.moderngymnasium.data.repository.AppRepository
+import ru.labore.moderngymnasium.ui.create.MenuCreateViewModelFactory
 import ru.labore.moderngymnasium.ui.inbox.MenuInboxViewModelFactory
 
 class MGApplication() : Application(), DIAware {
@@ -17,8 +18,10 @@ class MGApplication() : Application(), DIAware {
         bind() from singleton { instance<AppDatabase>().announcementEntityDao() }
         bind() from singleton { instance<AppDatabase>().userEntityDao() }
         bind() from singleton { instance<AppDatabase>().roleEntityDao() }
+        bind() from singleton { instance<AppDatabase>().classEntityDao() }
         bind() from singleton { AppNetwork(instance()) }
         bind() from singleton { AppRepository(
+            instance(),
             instance(),
             instance(),
             instance(),
@@ -28,6 +31,10 @@ class MGApplication() : Application(), DIAware {
 
         bind() from provider {
             MenuInboxViewModelFactory(instance())
+        }
+
+        bind() from provider {
+            MenuCreateViewModelFactory(instance())
         }
     }
 

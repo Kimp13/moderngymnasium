@@ -7,9 +7,11 @@ import kotlinx.coroutines.*
 import okhttp3.Interceptor
 import okhttp3.Response
 import org.threeten.bp.ZonedDateTime
+import ru.labore.moderngymnasium.data.db.daos.ClassEntityDao
 import ru.labore.moderngymnasium.data.db.daos.RoleEntityDao
 import ru.labore.moderngymnasium.data.db.daos.UserEntityDao
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
+import ru.labore.moderngymnasium.data.db.entities.ClassEntity
 import ru.labore.moderngymnasium.data.db.entities.RoleEntity
 import ru.labore.moderngymnasium.data.db.entities.UserEntity
 
@@ -18,10 +20,12 @@ class AppNetwork(context: Context) : Interceptor {
     val fetchedAnnouncementEntities = MutableLiveData<Array<AnnouncementEntity>>()
     val fetchedUserEntity = MutableLiveData<UserEntity>()
     val fetchedRoleEntity = MutableLiveData<RoleEntity>()
+    val fetchedClassEntity = MutableLiveData<ClassEntity>()
 
     suspend fun fetchAnnouncements(
         userEntityDao: UserEntityDao,
         roleEntityDao: RoleEntityDao,
+        classEntityDao: ClassEntityDao,
         jwt: String,
         offset: Int,
         limit: Int
@@ -47,25 +51,53 @@ class AppNetwork(context: Context) : Interceptor {
                         announcements[it].authorId
                     )
 
-                    if (
-                        user.roleId == null ||
-                        roleEntityDao.getRole(user.roleId!!) == null
-                    ) {
-                        
+                    if (user != null) {
+                        val weekBefore = ZonedDateTime.now().minusWeeks(1)
+
+                        if (user.roleId != null) {
+                            var role = roleEntityDao.getRole(user.roleId!!)
+
+                            if (
+                                role?.updatedAt?.isBefore(weekBefore) != false
+                            ) {
+                                role = FetchRole(
+                                    appContext,
+                                    this@AppNetwork,
+                                    user.roleId!!
+                                )
+
+                                if (role != null) {
+                                    fetchedRoleEntity.postValue(role)
+                                }
+                            }
+                        }
+
+                        if (user.classId != null) {
+                            var classEntity = classEntityDao.getClass(user.classId!!)
+
+                            if (
+                                classEntity?.updatedAt?.isBefore(weekBefore) != false
+                            ) {
+                                classEntity = FetchClass(
+                                    appContext,
+                                    this@AppNetwork,
+                                    user.classId!!
+                                )
+
+                                if (classEntity != null) {
+                                    fetchedClassEntity.postValue(classEntity)
+                                }
+                            }
+                        }
+
+                        fetchedUserEntity.postValue(user)
                     }
-
-
                 }
             }
         }.joinAll()
 
         fetchedAnnouncementEntities.postValue(announcements)
     }
-
-    suspend fun fetchUser(
-        id: Int
-    ) = fetchedUserEntity.postValue(FetchUser(appContext, this, id))
-
 
     override fun intercept(chain: Interceptor.Chain): Response {
         if (isOnline()) {

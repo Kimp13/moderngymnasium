@@ -6,14 +6,16 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import ru.labore.moderngymnasium.data.db.daos.AnnouncementEntityDao
+import ru.labore.moderngymnasium.data.db.daos.ClassEntityDao
 import ru.labore.moderngymnasium.data.db.daos.RoleEntityDao
 import ru.labore.moderngymnasium.data.db.daos.UserEntityDao
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
+import ru.labore.moderngymnasium.data.db.entities.ClassEntity
 import ru.labore.moderngymnasium.data.db.entities.RoleEntity
 import ru.labore.moderngymnasium.data.db.entities.UserEntity
 
 @Database(
-    entities = [AnnouncementEntity::class, RoleEntity::class, UserEntity::class],
+    entities = [AnnouncementEntity::class, RoleEntity::class, UserEntity::class, ClassEntity::class],
     version = 1
 )
 @TypeConverters(DateTimeConverter::class)
@@ -21,6 +23,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun announcementEntityDao() : AnnouncementEntityDao
     abstract fun userEntityDao() : UserEntityDao
     abstract fun roleEntityDao() : RoleEntityDao
+    abstract fun classEntityDao() : ClassEntityDao
 
     companion object {
         @Volatile private var instance: AppDatabase? = null

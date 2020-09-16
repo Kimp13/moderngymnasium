@@ -8,12 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import ru.labore.moderngymnasium.R
 
-class menuProfileFragment : Fragment() {
-
-    companion object {
-        fun newInstance() = menuProfileFragment()
-    }
-
+class MenuProfileFragment : Fragment() {
     private lateinit var viewModel: MenuProfileViewModel
 
     override fun onCreateView(

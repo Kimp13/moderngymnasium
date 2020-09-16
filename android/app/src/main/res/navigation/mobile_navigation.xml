@@ -3,21 +3,21 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@id/menuCreateFragment">
+    app:startDestination="@id/menuInboxFragment">
 
     <fragment
         android:id="@+id/menuCreateFragment"
-        android:name="ru.labore.moderngymnasium.ui.create.menuCreateFragment"
+        android:name="ru.labore.moderngymnasium.ui.create.MenuCreateFragment"
         android:label="menu_create_fragment"
         tools:layout="@layout/menu_create_fragment" />
     <fragment
         android:id="@+id/menuProfileFragment"
-        android:name="ru.labore.moderngymnasium.ui.profile.menuProfileFragment"
+        android:name="ru.labore.moderngymnasium.ui.profile.MenuProfileFragment"
         android:label="menu_profile_fragment"
         tools:layout="@layout/menu_profile_fragment" />
     <fragment
         android:id="@+id/menuInboxFragment"
-        android:name="ru.labore.moderngymnasium.ui.inbox.menuInboxFragment"
+        android:name="ru.labore.moderngymnasium.ui.inbox.MenuInboxFragment"
         android:label="menu_inbox_fragment"
         tools:layout="@layout/menu_inbox_fragment" />
 </navigation>

@@ -1,9 +1,7 @@
 package ru.labore.moderngymnasium.data.db.daos
 
-import androidx.lifecycle.LiveData
 import androidx.room.*
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
-import ru.labore.moderngymnasium.data.db.entities.AnnouncementWithAuthor
 
 @Dao
 interface AnnouncementEntityDao {
@@ -18,9 +16,8 @@ interface AnnouncementEntityDao {
 
     @Transaction
     @Query("""
-        select * from announcement 
-        join user on user.id = announcement.authorId
+        select * from announcement
         limit :limit offset :offset
     """)
-    suspend fun getAnnouncements(offset: Int, limit: Int): Array<AnnouncementWithAuthor>
+    suspend fun getAnnouncements(offset: Int, limit: Int): Array<AnnouncementEntity>
 }

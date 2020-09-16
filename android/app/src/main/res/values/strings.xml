@@ -36,6 +36,9 @@
             <string name="sign_in">&sign_in;</string>
 
         <!-- Main Activity strings -->
+            <!-- Fragment strings -->
+                <!-- Create fragment strings -->
+                    <string name="hint_create_announcement">Enter text…</string>
             <!-- Bottom Nav strings -->
                 <string name="menu_create">Announce</string>
                 <string name="menu_inbox">Announcements</string>

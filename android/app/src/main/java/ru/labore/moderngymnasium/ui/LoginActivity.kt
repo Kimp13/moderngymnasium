@@ -81,6 +81,6 @@ class LoginActivity : AppCompatActivity(), DIAware {
             }
         }
 
-        rootLayout.setOnClickListener {hideKeyboard()}
+        rootLoginLayout.setOnClickListener {hideKeyboard()}
     }
 }

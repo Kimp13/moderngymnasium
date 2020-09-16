@@ -1,7 +1,10 @@
 package ru.labore.moderngymnasium.ui.create
 
 import androidx.lifecycle.ViewModel
+import ru.labore.moderngymnasium.data.repository.AppRepository
 
-class MenuCreateViewModel : ViewModel() {
-    // TODO: Implement the ViewModel
+class MenuCreateViewModel(
+    private val appRepository: AppRepository
+) : ViewModel() {
+
 }

@@ -8,6 +8,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
+import ru.labore.moderngymnasium.data.db.entities.ClassEntity
+import ru.labore.moderngymnasium.data.db.entities.RoleEntity
 import ru.labore.moderngymnasium.data.db.entities.UserEntity
 import ru.labore.moderngymnasium.data.sharedpreferences.entities.User
 
@@ -88,14 +90,14 @@ interface FetchAnnouncements {
 
 interface FetchUser {
     @GET("users")
-    suspend fun fetch(@Query("id") id: Int): UserEntity
+    suspend fun fetch(@Query("id") id: Int): UserEntity?
 
     companion object {
         suspend operator fun invoke(
             context: Context,
             requestInterceptor: Interceptor,
             id: Int
-        ): UserEntity {
+        ): UserEntity? {
             val okHttpClient = OkHttpClient
                 .Builder()
                 .addInterceptor(requestInterceptor)
@@ -112,6 +114,68 @@ interface FetchUser {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
                 .create(FetchUser::class.java)
+                .fetch(id)
+        }
+    }
+}
+
+interface FetchRole {
+    @GET("roles")
+    suspend fun fetch(@Query("id") id: Int): RoleEntity?
+
+    companion object {
+        suspend operator fun invoke(
+            context: Context,
+            requestInterceptor: Interceptor,
+            id: Int
+        ): RoleEntity? {
+            val okHttpClient = OkHttpClient
+                .Builder()
+                .addInterceptor(requestInterceptor)
+                .build()
+
+            return Retrofit
+                .Builder()
+                .client(okHttpClient)
+                .baseUrl(
+                    context
+                        .resources
+                        .getString(R.string.api_url)
+                )
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(FetchRole::class.java)
+                .fetch(id)
+        }
+    }
+}
+
+interface FetchClass {
+    @GET("class")
+    suspend fun fetch(@Query("id") id: Int): ClassEntity?
+
+    companion object {
+        suspend operator fun invoke(
+            context: Context,
+            requestInterceptor: Interceptor,
+            id: Int
+        ): ClassEntity? {
+            val okHttpClient = OkHttpClient
+                .Builder()
+                .addInterceptor(requestInterceptor)
+                .build()
+
+            return Retrofit
+                .Builder()
+                .client(okHttpClient)
+                .baseUrl(
+                    context
+                        .resources
+                        .getString(R.string.api_url)
+                )
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(FetchClass::class.java)
                 .fetch(id)
         }
     }

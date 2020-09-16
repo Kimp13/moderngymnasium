@@ -6,13 +6,17 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import org.kodein.di.DIAware
+import org.kodein.di.instance
 import ru.labore.moderngymnasium.R
+import ru.labore.moderngymnasium.data.repository.AppRepository
+import ru.labore.moderngymnasium.ui.base.ScopedFragment
 
-class menuCreateFragment : Fragment() {
+class MenuCreateFragment : ScopedFragment(), DIAware {
+    override val di by lazy { (context as DIAware).di }
 
-    companion object {
-        fun newInstance() = menuCreateFragment()
-    }
+    private val viewModelFactory:
+            MenuCreateViewModelFactory by instance()
 
     private lateinit var viewModel: MenuCreateViewModel
 
@@ -25,8 +29,11 @@ class menuCreateFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = ViewModelProviders.of(this).get(MenuCreateViewModel::class.java)
-        // TODO: Use the ViewModel
+        viewModel = ViewModelProviders
+            .of(this, viewModelFactory)
+            .get(MenuCreateViewModel::class.java)
+
+
     }
 
 }

@@ -10,6 +10,4 @@ class MenuInboxViewModel(
     val announcements by lazyDeferred {
         appRepository.getAnnouncements()
     }
-
-
 }

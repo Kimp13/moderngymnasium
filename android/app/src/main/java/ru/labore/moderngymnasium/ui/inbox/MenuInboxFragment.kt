@@ -16,11 +16,10 @@ import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.repository.AppRepository
 import ru.labore.moderngymnasium.ui.base.ScopedFragment
 
-class menuInboxFragment : ScopedFragment(), DIAware {
+class MenuInboxFragment : ScopedFragment(), DIAware {
     override val di: DI by lazy { (context as DIAware).di }
 
     private val viewModelFactory: MenuInboxViewModelFactory by instance()
-    private val repository: AppRepository by instance()
 
     private lateinit var viewModel: MenuInboxViewModel
 
