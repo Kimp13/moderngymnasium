@@ -1,6 +1,7 @@
 package ru.labore.moderngymnasium.data.network
 
 import android.content.Context
+import com.google.gson.Gson
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -14,6 +15,8 @@ import ru.labore.moderngymnasium.data.db.entities.UserEntity
 import ru.labore.moderngymnasium.data.sharedpreferences.entities.User
 
 data class UserCredentials(val username: String, val password: String)
+
+data class AnnouncementText(val text: String)
 
 interface SignIn {
     @POST("users/signin")
@@ -47,6 +50,44 @@ interface SignIn {
     }
 }
 
+interface CreateAnnouncement {
+    @POST("announcements/create")
+    suspend fun createAnnouncement(
+        @Header("Authentication") jwt: String,
+        @Body body: AnnouncementText
+    )
+
+    companion object {
+        suspend operator fun invoke(
+            context: Context,
+            requestInterceptor: Interceptor,
+            jwt: String,
+            text: String
+        ) {
+            val okHttpClient = OkHttpClient
+                .Builder()
+                .addInterceptor(requestInterceptor)
+                .build()
+
+            Retrofit
+                .Builder()
+                .client(okHttpClient)
+                .baseUrl(
+                    context
+                        .resources
+                        .getString(R.string.api_url)
+                )
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(CreateAnnouncement::class.java)
+                .createAnnouncement(
+                    jwt,
+                    AnnouncementText(text)
+                )
+        }
+    }
+}
+
 interface FetchAnnouncements {
     @GET("announcements/getMine")
     suspend fun fetch(
@@ -59,6 +100,7 @@ interface FetchAnnouncements {
         suspend operator fun invoke(
             context: Context,
             requestInterceptor: Interceptor,
+            gson: Gson,
             jwt: String,
             offset: Int,
             limit: Int
@@ -76,7 +118,7 @@ interface FetchAnnouncements {
                         .resources
                         .getString(R.string.api_url)
                 )
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create(gson))
                 .build()
                 .create(FetchAnnouncements::class.java)
                 .fetch(

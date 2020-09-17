@@ -1,9 +1,10 @@
 package ru.labore.moderngymnasium.data.repository
 
 import android.content.Context
-import com.google.gson.Gson
+import com.google.gson.*
 import kotlinx.coroutines.*
-import okhttp3.Dispatcher
+import org.threeten.bp.Instant
+import org.threeten.bp.ZoneOffset
 import org.threeten.bp.ZonedDateTime
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.db.daos.AnnouncementEntityDao
@@ -11,9 +12,37 @@ import ru.labore.moderngymnasium.data.db.daos.ClassEntityDao
 import ru.labore.moderngymnasium.data.db.daos.RoleEntityDao
 import ru.labore.moderngymnasium.data.db.daos.UserEntityDao
 import ru.labore.moderngymnasium.data.db.entities.*
-import ru.labore.moderngymnasium.data.network.AppNetwork
-import ru.labore.moderngymnasium.data.network.SignIn
+import ru.labore.moderngymnasium.data.network.*
 import ru.labore.moderngymnasium.data.sharedpreferences.entities.User
+import java.lang.reflect.Type
+
+class JsonSerializerImpl : JsonSerializer<ZonedDateTime> {
+    override fun serialize(
+        src: ZonedDateTime?,
+        typeOfSrc: Type?,
+        context: JsonSerializationContext?
+    ): JsonElement {
+        return if (src == null) {
+            JsonPrimitive("")
+        } else {
+            JsonPrimitive(src.toString())
+        }
+    }
+}
+
+class JsonDeserializerImpl : JsonDeserializer<ZonedDateTime> {
+    override fun deserialize(
+        json: JsonElement?,
+        typeOfT: Type?,
+        context: JsonDeserializationContext?
+    ): ZonedDateTime {
+        return if (json == null) {
+            ZonedDateTime.ofInstant(Instant.ofEpochSecond(0), ZoneOffset.UTC)
+        } else {
+            ZonedDateTime.parse(json.asString)
+        }
+    }
+}
 
 class AppRepository(
     private val context: Context,
@@ -23,7 +52,10 @@ class AppRepository(
     private val classEntityDao: ClassEntityDao,
     private val appNetwork: AppNetwork
 ) {
-    private val gson = Gson()
+    private val gson = GsonBuilder()
+        .registerTypeAdapter(ZonedDateTime::class.java, JsonSerializerImpl())
+        .registerTypeAdapter(ZonedDateTime::class.java, JsonDeserializerImpl())
+        .create()
     private val sharedPreferences = context.getSharedPreferences(
         context.getString(R.string.utility_shared_preference_file_key),
         Context.MODE_PRIVATE
@@ -63,7 +95,22 @@ class AppRepository(
         editor.apply()
     }
 
+    suspend fun createAnnouncement(
+        text: String
+    ) {
+        if (user?.jwt != null) {
+            CreateAnnouncement(
+                context,
+                appNetwork,
+                user!!.jwt,
+                text
+            )
+        }
+    }
+
     suspend fun getAnnouncements(offset: Int = 0, limit: Int = 25): Array<AnnouncementEntity> {
+        var announcements: Array<AnnouncementEntity>
+
         if (user == null) {
             return emptyArray()
         }
@@ -78,38 +125,106 @@ class AppRepository(
             announcement?.updatedAt?.isAfter(now) != false ||
             announcement.updatedAt!!.isBefore(tenMinutesBefore)
         ) {
-            appNetwork.fetchAnnouncements(
-                userEntityDao,
-                roleEntityDao,
-                classEntityDao,
+            announcements = appNetwork.fetchAnnouncements(
                 user!!.jwt,
                 offset,
-                limit
+                limit,
+                gson
             )
-        }
+            val oneDayBefore = ZonedDateTime.now().minusDays(1)
 
-        val announcements = announcementEntityDao
-            .getAnnouncements(offset, limit)
+            List(announcements.size) {
+                GlobalScope.launch {
+                    announcements[it].author = userEntityDao
+                        .getUser(announcements[it].authorId)
 
-        List(announcements.size) {
-            GlobalScope.launch {
+                    if (
+                        announcements[it].author
+                            ?.updatedAt
+                            ?.isBefore(oneDayBefore) != false
+                    ) {
+                        announcements[it].author = appNetwork.fetchUser(
+                            announcements[it].authorId
+                        )
 
-                announcements[it].author = userEntityDao
-                    .getUser(announcements[it].authorId)
+                        if (announcements[it].author != null) {
+                            val weekBefore = ZonedDateTime.now().minusWeeks(1)
 
-                if (announcements[it].author != null) {
-                    if (announcements[it].author!!.classId != null) {
-                        announcements[it].authorClass =
-                            classEntityDao.getClass(announcements[it].author!!.classId!!)
-                    }
+                            if (announcements[it].author!!.roleId != null) {
+                                announcements[it].authorRole = roleEntityDao.getRole(
+                                    announcements[it].author!!.roleId!!
+                                )
 
-                    if (announcements[it].author!!.roleId != null) {
-                        announcements[it].authorRole =
-                            roleEntityDao.getRole(announcements[it].author!!.roleId!!)
+                                if (
+                                    announcements[it].authorRole
+                                        ?.updatedAt
+                                        ?.isBefore(weekBefore) != false
+                                ) {
+                                    announcements[it].authorRole = appNetwork.fetchRole(
+                                        announcements[it].author!!.roleId!!
+                                    )
+
+                                    if (announcements[it].authorRole != null) {
+                                        persistFetchedRole(
+                                            announcements[it].authorRole!!
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (announcements[it].author!!.classId != null) {
+                                announcements[it].authorClass = classEntityDao.getClass(
+                                    announcements[it].author!!.classId!!
+                                )
+
+                                if (
+                                    announcements[it].authorClass
+                                        ?.updatedAt
+                                        ?.isBefore(weekBefore) != false
+                                ) {
+                                    announcements[it].authorClass = appNetwork.fetchClass(
+                                        announcements[it].author!!.classId!!
+                                    )
+
+                                    if (announcements[it].authorClass != null) {
+                                        persistFetchedClass(
+                                            announcements[it].authorClass!!
+                                        )
+                                    }
+                                }
+                            }
+
+                            persistFetchedUser(announcements[it].author!!)
+                        }
                     }
                 }
-            }
-        }.joinAll()
+            }.joinAll()
+
+            persistFetchedAnnouncements(announcements)
+        } else {
+            announcements = announcementEntityDao
+                .getAnnouncements(offset, limit)
+
+            List(announcements.size) {
+                GlobalScope.launch {
+
+                    announcements[it].author = userEntityDao
+                        .getUser(announcements[it].authorId)
+
+                    if (announcements[it].author != null) {
+                        if (announcements[it].author!!.classId != null) {
+                            announcements[it].authorClass =
+                                classEntityDao.getClass(announcements[it].author!!.classId!!)
+                        }
+
+                        if (announcements[it].author!!.roleId != null) {
+                            announcements[it].authorRole =
+                                roleEntityDao.getRole(announcements[it].author!!.roleId!!)
+                        }
+                    }
+                }
+            }.joinAll()
+        }
 
         return announcements
     }

@@ -26,6 +26,8 @@
     <string name="invalid_credentials">Авторизация неудачна: неверный логин или пароль</string>
 
     <string name="hint_create_announcement">Введите текст…</string>
+    <string name="create_announcement_label">Объявить</string>
+    <string name="enter_announcement_text">Введите текст объявления</string>
 
     <string name="menu_create">Объявить</string>
     <string name="menu_inbox">Объявления</string>

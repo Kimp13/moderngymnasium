@@ -8,5 +8,10 @@
     "method": "GET",
     "path": "/countMine",
     "handler": "count"
+  },
+  {
+    "method": "POST",
+    "path": "/create",
+    "handler": "create"
   }
 ]

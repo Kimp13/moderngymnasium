@@ -3,6 +3,7 @@ package ru.labore.moderngymnasium.data.network
 import android.content.Context
 import android.net.ConnectivityManager
 import androidx.lifecycle.MutableLiveData
+import com.google.gson.Gson
 import kotlinx.coroutines.*
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -23,81 +24,42 @@ class AppNetwork(context: Context) : Interceptor {
     val fetchedClassEntity = MutableLiveData<ClassEntity>()
 
     suspend fun fetchAnnouncements(
-        userEntityDao: UserEntityDao,
-        roleEntityDao: RoleEntityDao,
-        classEntityDao: ClassEntityDao,
         jwt: String,
         offset: Int,
-        limit: Int
-    ) {
-        val announcements = FetchAnnouncements(
-            appContext,
-            this,
-            jwt,
-            offset,
-            limit
-        )
-        val oneDayBefore = ZonedDateTime.now().minusDays(1)
-        List(announcements.size) {
-            GlobalScope.launch {
-                var user = userEntityDao
-                    .getUserLastUpdatedTime(announcements[it].authorId)
-                if (
-                    user?.updatedAt?.isBefore(oneDayBefore) != false
-                ) {
-                    user = FetchUser(
-                        appContext,
-                        this@AppNetwork,
-                        announcements[it].authorId
-                    )
+        limit: Int,
+        gson: Gson
+    ) = FetchAnnouncements(
+        appContext,
+        this,
+        gson,
+        jwt,
+        offset,
+        limit
+    )
 
-                    if (user != null) {
-                        val weekBefore = ZonedDateTime.now().minusWeeks(1)
+    suspend fun fetchUser(
+        id: Int
+    ) = FetchUser(
+        appContext,
+        this,
+        id
+    )
 
-                        if (user.roleId != null) {
-                            var role = roleEntityDao.getRole(user.roleId!!)
+    suspend fun fetchRole(
+        id: Int
+    ) = FetchRole(
+        appContext,
+        this,
+        id
+    )
 
-                            if (
-                                role?.updatedAt?.isBefore(weekBefore) != false
-                            ) {
-                                role = FetchRole(
-                                    appContext,
-                                    this@AppNetwork,
-                                    user.roleId!!
-                                )
-
-                                if (role != null) {
-                                    fetchedRoleEntity.postValue(role)
-                                }
-                            }
-                        }
-
-                        if (user.classId != null) {
-                            var classEntity = classEntityDao.getClass(user.classId!!)
-
-                            if (
-                                classEntity?.updatedAt?.isBefore(weekBefore) != false
-                            ) {
-                                classEntity = FetchClass(
-                                    appContext,
-                                    this@AppNetwork,
-                                    user.classId!!
-                                )
-
-                                if (classEntity != null) {
-                                    fetchedClassEntity.postValue(classEntity)
-                                }
-                            }
-                        }
-
-                        fetchedUserEntity.postValue(user)
-                    }
-                }
-            }
-        }.joinAll()
-
-        fetchedAnnouncementEntities.postValue(announcements)
-    }
+    suspend fun fetchClass(
+        id: Int
+    ) = FetchClass(
+        appContext,
+        this,
+        id
+    )
 
     override fun intercept(chain: Interceptor.Chain): Response {
         if (isOnline()) {

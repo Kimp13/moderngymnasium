@@ -1,12 +1,32 @@
-const pick = require('lodash/pick');
-const { set } = require('lodash');
+const _ = require('lodash');
 
 module.exports = permissionsArray => {
-  let permissionsObject = new Object();
+  let permissionObject = new Object();
 
   for (let permission of permissionsArray) {
-    set(permissionsObject, permission.name.split('_'), true);
+    if (permission.operation) {
+        if (permission.role_id) {
+          if (_.has(
+            permissionObject,
+            [permission.type, permission.operation]
+          )) {
+            permissionObject[type][operation].push(permission.role_id);
+          } else {
+            _.set(permissionObject, [
+              permission.type,
+              permission.operation
+            ], [permission.role_id]);
+          }
+        } else {
+          _.set(permissionObject, [
+            permission.type,
+            permission.operation
+          ], true);
+        }
+    } else {
+      _.set(permissionObject, permission.type, true);
+    }
   }
 
-  return permissionsObject;
-}
+  return permissionObject;
+};

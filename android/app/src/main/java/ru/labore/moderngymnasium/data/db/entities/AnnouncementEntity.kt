@@ -12,7 +12,7 @@ data class AnnouncementEntity(
     val id: Int,
 
     @SerializedName("created_at")
-    val createdAt: Int,
+    val createdAt: ZonedDateTime,
 
     @SerializedName("author_id")
     val authorId: Int,

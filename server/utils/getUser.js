@@ -1,4 +1,4 @@
-const parsePermissions = require('./permissionArrayToObject');
+const parsePermissions = require("./permissionArrayToObject");
 
 module.exports = async jwt => {
   if (jwt) {

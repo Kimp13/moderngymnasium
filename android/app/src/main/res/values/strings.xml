@@ -39,6 +39,9 @@
             <!-- Fragment strings -->
                 <!-- Create fragment strings -->
                     <string name="hint_create_announcement">Enter text…</string>
+                    <string name="create_announcement_label">Announce</string>
+                    <string name="enter_announcement_text">Enter announcement text</string>
+
             <!-- Bottom Nav strings -->
                 <string name="menu_create">Announce</string>
                 <string name="menu_inbox">Announcements</string>

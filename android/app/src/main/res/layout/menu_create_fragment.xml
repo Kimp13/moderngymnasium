@@ -8,14 +8,27 @@
     android:padding="20dp">
 
     <EditText
+        android:id="@+id/createAnnouncementEditText"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:hint="@string/hint_create_announcement"
         android:importantForAutofill="no"
         android:inputType="textAutoComplete"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/createAnnouncementButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/createAnnouncementButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:padding="10dp"
+        android:text="@string/create_announcement_label"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/createAnnouncementEditText"
+        app:layout_constraintStart_toStartOf="@id/createAnnouncementEditText"
+        app:layout_constraintTop_toTopOf="@+id/createAnnouncementEditText" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
