@@ -36,7 +36,7 @@
             <string name="enter_password">Enter password</string>
             <string name="password_too_short">Password must contain at least 8 characters</string>
             <string name="invalid_credentials">Couldn\'t log in: wrong username or password</string>
-            <string name="sign_in">&sign_in;</string>
+            <string name="sign_in">&sign_in;Sign In</string>
 
         <!-- Main Activity strings -->
             <!-- Fragment strings -->
@@ -44,6 +44,7 @@
                     <string name="hint_create_announcement">Enter text…</string>
                     <string name="create_announcement_label">Announce</string>
                     <string name="enter_announcement_text">Enter announcement text</string>
+                    <string name="choose_recipient_role">Choose at least one recipient</string>
 
             <!-- Bottom Nav strings -->
                 <string name="menu_create">Announce</string>

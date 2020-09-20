@@ -6,6 +6,20 @@ module.exports = async (req, res) => {
     const user = await getUser(req.headers.authentication);
 
     if (user) {
+      await mg.knex.transaction(t => (
+        t('messaging_token')
+          .insert({
+            token: req.body.token
+          })
+          .then(id => {
+            return t('messaging_token_user')
+              .insert({
+                user_id: user.id,
+                token_id: id[0]
+              });
+          })
+      ));
+
       if (mg.cache.usersTokens.hasOwnProperty(user.id)) {
         if (has(mg.cache.usersTokens[user.id], req.body.token) === -1) {
           mg.cache.usersTokens[user.id].push(

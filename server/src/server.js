@@ -61,7 +61,6 @@ const firebaseServiceAccount = require(process.cwd() + PATH_TO_FIREBASE_KEY);
 
 /**
  * Main function of the server.
- * @returns nothing
  */
 const main = () => {
   // proceed if connected to database
@@ -81,177 +80,215 @@ const main = () => {
 
         Promise.all(
           // Initialize server filesystem dependencies
-          files.map(file => new Promise((resolve, reject) => {
-            let currentPath = path.join(modelsPath, file),
-                modelPath = path.join(currentPath, 'model.js'),
-                servicesPath = path.join(currentPath, 'services.js'),
-                routesPath = path.join(currentPath, 'routes.json'),
-                controllersPath = path.join(currentPath, 'controllers.js'),
-                routeName = getRouteName(file);
-      
-            Promise.all([
-              new Promise((resolve, reject) => {
-                fs.access(modelPath, fs.F_OK, err => {
-                  if (err) {
-                    resolve();
-                    return;
-                  }
-                  
-                  let model = require(modelPath);
-          
-                  knex.schema.hasTable(model.tableName).then(exists => {
-                    if (exists) {
-                      mg.models[file] = bookshelf.model(file, {
-                        requireFetch: false,
-                        ...model
-                      });
+          [
+            ...files.map(file => new Promise((resolve, reject) => {
+              let currentPath = path.join(modelsPath, file),
+                  modelPath = path.join(currentPath, 'model.js'),
+                  servicesPath = path.join(currentPath, 'services.js'),
+                  routesPath = path.join(currentPath, 'routes.json'),
+                  controllersPath = path.join(currentPath, 'controllers.js'),
+                  routeName = getRouteName(file);
         
-                      if (file.toLowerCase() === 'user') {
-                        mg
-                          .models[file]
-                          .count()
-                          .then(count => (mg.cache.usersCount = count));
-                      }
+              Promise.all([
+                new Promise((resolve, reject) => {
+                  fs.access(modelPath, fs.F_OK, err => {
+                    if (err) {
+                      resolve();
+                      return;
                     }
                     
-                    resolve();
-                  });
-                });
-              }),
-              new Promise((resolve, reject) => {
-                fs.access(routesPath, fs.F_OK, err => {
-                  if (err) {
-                    resolve();
-                    return;
-                  }
-          
-                  fs.access(controllersPath, fs.F_OK, err => {
-                    let routes = require(routesPath),
-                        controllers = require(controllersPath);
+                    let model = require(modelPath);
             
-                    for (let j = 0; j < routes.length; j += 1) {
-                      routes[j].method = routes[j].method.toUpperCase();
+                    knex.schema.hasTable(model.tableName).then(exists => {
+                      if (exists) {
+                        mg.models[file] = bookshelf.model(file, {
+                          requireFetch: false,
+                          ...model
+                        });
           
-                      if (
-                        routes[j].path.charAt(
-                          routes[j].path.length - 1
-                        ) !== '/'
-                      ) {
-                        routes[j].path += '/';
+                        if (file.toLowerCase() === 'user') {
+                          mg
+                            .models[file]
+                            .count()
+                            .then(count => (mg.cache.usersCount = count));
+                        }
                       }
-              
-                      if (!mg.paths.hasOwnProperty(routes[j].method)) {
-                        mg.paths[routes[j].method] = new Object();
-                      }
-              
-                      mg.paths[routes[j].method][`/${routeName}${routes[j].path}`] = (
-                        routes[j].handler === 'default' ?
-                          controllers :
-                          controllers[routes[j].handler]
-                      );
-
+                      
                       resolve();
-                    }
+                    });
                   });
-                });
-              }),
-              new Promise((resolve, reject) => {
-                fs.access(servicesPath, fs.F_OK, err => {
-                  if (err) {
+                }),
+                new Promise((resolve, reject) => {
+                  fs.access(routesPath, fs.F_OK, err => {
+                    if (err) {
+                      resolve();
+                      return;
+                    }
+            
+                    fs.access(controllersPath, fs.F_OK, err => {
+                      let routes = require(routesPath),
+                          controllers = require(controllersPath);
+              
+                      for (let j = 0; j < routes.length; j += 1) {
+                        routes[j].method = routes[j].method.toUpperCase();
+            
+                        if (
+                          routes[j].path.charAt(
+                            routes[j].path.length - 1
+                          ) !== '/'
+                        ) {
+                          routes[j].path += '/';
+                        }
+                
+                        if (!mg.paths.hasOwnProperty(routes[j].method)) {
+                          mg.paths[routes[j].method] = new Object();
+                        }
+                
+                        mg.paths[routes[j].method][`/${routeName}${routes[j].path}`] = (
+                          routes[j].handler === 'default' ?
+                            controllers :
+                            controllers[routes[j].handler]
+                        );
+  
+                        resolve();
+                      }
+                    });
+                  });
+                }),
+                new Promise((resolve, reject) => {
+                  fs.access(servicesPath, fs.F_OK, err => {
+                    if (err) {
+                      resolve();
+                      return;
+                    }
+            
+                    mg.services[_.camelCase(file)] = require(servicesPath);
                     resolve();
-                    return;
-                  }
-          
-                  mg.services[_.camelCase(file)] = require(servicesPath);
-                  resolve();
-                });
-              })
-            ]).then(resolve);
-          }))
-        ).then(() => {
-          // Initialize Firebase
-          mg.firebaseAdmin.initializeApp({
-            credential: mg.firebaseAdmin.credential.cert(firebaseServiceAccount),
-            databaseURL: 'https://modern-gymnasium.firebaseio.com'
-          });
+                  });
+                })
+              ]).then(resolve);
+            })),
+            new Promise((resolve, reject) => {
+              knex
+                .select('user.id', 'messaging_token.token')
+                .from('user')
+                .innerJoin(
+                  'messaging_token_user',
+                  'messaging_token_user.user_id',
+                  'user.id'
+                )
+                .innerJoin(
+                  'messaging_token',
+                  'messaging_token_user.token_id',
+                  'messaging_token.id'
+                )
+                  .then(tokens => {
+                    for (let i = 0; i < tokens.length; i += 1) {
+                      if (mg.cache.usersTokens.hasOwnProperty(tokens[i].id)) {
+                        mg.cache.usersTokens[tokens[i].id].push(tokens[i].token);
+                      } else {
+                        mg.cache.usersTokens[tokens[i].id] = [tokens[i].token];
+                      }
+                    }
 
-          polka()
-            .use(bodyParser.json({ extended: true }))
-            .use(async (req, res, next) => {
-              const start = new Date();
-          
-              await next();
-          
-              const ms = Date.now() - start.getTime();
-          
-              console.log(
-                `${start.toLocaleString()} | ${req.method} on ` +
-                req.url + ' took ' + ms + ' ms'
-              );
+                    resolve();
+                  }, reject);
             })
-            .use(async (req, res, next) => {
-              req.cookies = cookie.parse(req.headers.cookie || '');
+          ]
+        )
+          .then(() => {
+            // Initialize Firebase
+            mg.firebaseAdmin.initializeApp({
+              credential: mg.firebaseAdmin.credential.cert(firebaseServiceAccount),
+              databaseURL: 'https://modern-gymnasium.firebaseio.com'
+            });
 
-              const questionMarkIndex = req.url.indexOf('?');
+            polka()
+              .use(bodyParser.json({ extended: true }))
+              .use(async (req, res, next) => {
+                const start = new Date();
+            
+                await next();
+            
+                const ms = Date.now() - start.getTime();
+            
+                console.log(
+                  `${start.toLocaleString()} | ${res.statusCode} ${req.method} on ` +
+                  req.url + ' took ' + ms + ' ms'
+                );
+              })
+              .use(async (req, res, next) => {
+                req.cookies = cookie.parse(req.headers.cookie || '');
 
-              if (questionMarkIndex === -1) {
-                req.path = req.url;
-                req.search = '';
-              } else {
-                req.path = req.url.substring(0, questionMarkIndex);
-                req.search = req.url.substring(questionMarkIndex + 1);
-              }
-      
-              if (req.path.substring(0, 4) === '/api') {
-                req.path = req.path.substring(4);
+                const questionMarkIndex = req.url.indexOf('?');
 
-                if (req.path.charAt(req.path.length - 1) !== '/') {
-                  req.path += '/';
-                }
-
-                if (
-                  mg.paths.hasOwnProperty(req.method) &&
-                  mg.paths[req.method].hasOwnProperty(req.path)
-                ) {
-                  await mg.paths[req.method][req.path](req, res);
+                if (questionMarkIndex === -1) {
+                  req.path = req.url;
+                  req.search = '';
                 } else {
-                  res.statusCode = 404;
-                  res.end('{}');
+                  req.path = req.url.substring(0, questionMarkIndex);
+                  req.search = req.url.substring(questionMarkIndex + 1);
+                }
+        
+                if (req.path.substring(0, 4) === '/api') {
+                  req.path = req.path.substring(4);
+
+                  if (req.path.charAt(req.path.length - 1) !== '/') {
+                    req.path += '/';
+                  }
+
+                  if (
+                    mg.paths.hasOwnProperty(req.method) &&
+                    mg.paths[req.method].hasOwnProperty(req.path)
+                  ) {
+                    try {
+                      await mg.paths[req.method][req.path](req, res);
+                    } catch (e) {
+                      console.log(e);
+
+                      res.statusCode = 500;
+                      res.end('{}');
+                    }
+                  } else {
+                    res.statusCode = 404;
+                    res.end('{}');
+                  }
+                  
+                  return;
+                } else {
+                  await next();
+                }
+              })
+              .use(compression({ threshold: 0 }))
+              .use(sirv('static', { dev }))
+              .use(async (req, res, next) => {
+                let user = await getUser(req.cookies.jwt);
+        
+                if (user) {
+                  user = Object.assign({
+                    isAuthenticated: true
+                  }, _.pick(user, ['first_name', 'last_name', 'username', 'permissions']))
+                } else {
+                  user = {
+                    isAuthenticated: false
+                  }
                 }
                 
-                return;
-              } else {
-                await next();
-              }
-            })
-            .use(compression({ threshold: 0 }))
-            .use(sirv('static', { dev }))
-            .use(async (req, res, next) => {
-              let user = await getUser(req.cookies.jwt);
-      
-              if (user) {
-                user = Object.assign({
-                  isAuthenticated: true
-                }, _.pick(user, ['first_name', 'last_name', 'username', 'permissions']))
-              } else {
-                user = {
-                  isAuthenticated: false
-                }
-              }
-              
-              sapper.middleware({
-                session: () => {
-                  return {
-                    apiUrl: API_URL,
-                    user
-                  };
-                }
-              })(req, res, next);
-            })
-            .listen(PORT, err => {
-              if (err) console.log('error', err);
-            });
-        });
+                sapper.middleware({
+                  session: () => {
+                    return {
+                      apiUrl: API_URL,
+                      user
+                    };
+                  }
+                })(req, res, next);
+              })
+              .listen(PORT, err => {
+                if (err) console.log('error', err);
+              });
+          }, e => {
+            console.log(e);
+          });
       });
   });
 };

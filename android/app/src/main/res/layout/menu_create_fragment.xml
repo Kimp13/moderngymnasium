@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".ui.create.MenuCreateFragment"
-    android:padding="20dp">
+    android:padding="20dp"
+    tools:context=".ui.create.MenuCreateFragment">
 
     <EditText
         android:id="@+id/createAnnouncementEditText"
@@ -13,22 +13,36 @@
         android:layout_height="wrap_content"
         android:hint="@string/hint_create_announcement"
         android:importantForAutofill="no"
-        android:inputType="textAutoComplete"
-        app:layout_constraintBottom_toBottomOf="@id/createAnnouncementButton"
+        android:inputType="textMultiLine"
+        app:layout_constraintBottom_toTopOf="@+id/createAnnouncementRoleChoose"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="spread_inside"/>
+
+    <ScrollView
+        android:id="@+id/createAnnouncementRoleChoose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@+id/createAnnouncementButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/createAnnouncementEditText"
+        app:layout_constraintVertical_weight="1" />
 
     <Button
         android:id="@+id/createAnnouncementButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
         android:padding="10dp"
         android:text="@string/create_announcement_label"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@id/createAnnouncementEditText"
-        app:layout_constraintStart_toStartOf="@id/createAnnouncementEditText"
-        app:layout_constraintTop_toTopOf="@+id/createAnnouncementEditText" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/createAnnouncementRoleChoose" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

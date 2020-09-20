@@ -6,15 +6,17 @@ module.exports = (permissions, required) => {
       return true;
     }
 
-    while (required.length) {
-      const value = get(permissions, required);
-      
-      if (value) {
-        return value;
-      }
+    let i = 0;
+    let current = permissions[required[i++]];
 
-      required.pop();
+    while(
+      !(current instanceof Array) &&
+      current instanceof Object
+    ) {
+      current = current[required[i++]];
     }
+
+    return current;
   }
 
   return false;

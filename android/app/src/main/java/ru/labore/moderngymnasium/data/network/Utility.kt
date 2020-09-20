@@ -16,7 +16,7 @@ import ru.labore.moderngymnasium.data.sharedpreferences.entities.User
 
 data class UserCredentials(val username: String, val password: String)
 
-data class AnnouncementText(val text: String)
+data class AnnouncementTextAndRecipients(val text: String, val recipients: Array<Int>)
 
 data class TokenPayload(val token: String)
 
@@ -56,7 +56,7 @@ interface CreateAnnouncement {
     @POST("announcements/create")
     suspend fun createAnnouncement(
         @Header("Authentication") jwt: String,
-        @Body body: AnnouncementText
+        @Body body: AnnouncementTextAndRecipients
     )
 
     companion object {
@@ -64,7 +64,8 @@ interface CreateAnnouncement {
             context: Context,
             requestInterceptor: Interceptor,
             jwt: String,
-            text: String
+            text: String,
+            recipients: Array<Int>
         ) {
             val okHttpClient = OkHttpClient
                 .Builder()
@@ -84,7 +85,7 @@ interface CreateAnnouncement {
                 .create(CreateAnnouncement::class.java)
                 .createAnnouncement(
                     jwt,
-                    AnnouncementText(text)
+                    AnnouncementTextAndRecipients(text, recipients)
                 )
         }
     }

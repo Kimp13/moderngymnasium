@@ -122,14 +122,16 @@ class AppRepository(
     }
 
     suspend fun createAnnouncement(
-        text: String
+        text: String,
+        recipients: Array<Int>
     ) {
         if (user?.jwt != null) {
             CreateAnnouncement(
                 context,
                 appNetwork,
                 user!!.jwt,
-                text
+                text,
+                recipients
             )
         }
     }
@@ -251,6 +253,36 @@ class AppRepository(
         }.joinAll()
 
         return announcements
+    }
+
+    suspend fun getUserRoles(): Array<RoleEntity?> = if (
+            user?.data?.permissions?.announcement?.create != null
+        ) {
+            getRoles(user!!.data.permissions!!.announcement!!.create!!)
+        } else {
+            emptyArray()
+        }
+
+    private suspend fun getRoles(rolesIds: Array<Int>): Array<RoleEntity?> {
+        val result: Array<RoleEntity?> = arrayOfNulls(rolesIds.size)
+
+        List(rolesIds.size) {
+            GlobalScope.launch {
+                var role = roleEntityDao.getRole(rolesIds[it])
+
+                if (role == null) {
+                    role = appNetwork.fetchRole(rolesIds[it])
+
+                    if (role != null) {
+                        persistFetchedRole(role)
+                    }
+                }
+
+                result[it] = role
+            }
+        }.joinAll()
+
+        return result
     }
 
     private fun persistFetchedAnnouncements(
