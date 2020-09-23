@@ -28,13 +28,13 @@
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/colorPrimary" />
         <activity
-            android:name=".ui.LoginActivity"
+            android:name=".ui.activities.LoginActivity"
             android:label="@string/login_activity_label"
             android:windowSoftInputMode="stateVisible|adjustResize"
             android:theme="@style/AppThemeWithActionBar" />
 
         <activity
-            android:name=".ui.MainActivity"
+            android:name=".ui.activities.MainActivity"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/AppTheme">
             <intent-filter>

@@ -1,24 +1,18 @@
-package ru.labore.moderngymnasium.ui
+package ru.labore.moderngymnasium.ui.activities
 
 import android.content.Intent
-import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.Fragment
-import androidx.navigation.NavController
-import androidx.navigation.Navigation
-import androidx.navigation.ui.NavigationUI
-import androidx.navigation.ui.setupWithNavController
 import androidx.viewpager2.widget.ViewPager2
-import kotlinx.android.synthetic.main.activity_login.*
 import kotlinx.android.synthetic.main.activity_main.*
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.instance
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.repository.AppRepository
+import ru.labore.moderngymnasium.ui.adapters.MainFragmentPagerAdapter
 import ru.labore.moderngymnasium.utils.hideKeyboard
 
 class MainActivity : AppCompatActivity(), DIAware {
@@ -42,6 +36,15 @@ class MainActivity : AppCompatActivity(), DIAware {
 
             viewPagerAdapter = MainFragmentPagerAdapter(supportFragmentManager, lifecycle)
             navHostFragment.adapter = viewPagerAdapter
+            
+            navHostFragment.registerOnPageChangeCallback(object :
+                ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    super.onPageSelected(position)
+
+                    bottomNav.selectedItemId = bottomNav.menu.getItem(position).itemId
+                }
+            })
 
             bottomNav.setOnNavigationItemSelectedListener {
                 loadFragment(it)
@@ -56,7 +59,7 @@ class MainActivity : AppCompatActivity(), DIAware {
     }
 
     private fun loadFragment(menuItem: MenuItem): Boolean {
-        for (i in 0..viewPagerAdapter.itemCount) {
+        for (i in 0 until viewPagerAdapter.itemCount) {
             if (bottomNav.menu.getItem(i).itemId == menuItem.itemId) {
                 navHostFragment.currentItem = i
                 return true

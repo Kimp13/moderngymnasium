@@ -1,27 +1,30 @@
 package ru.labore.moderngymnasium.ui.inbox
 
-import androidx.lifecycle.ViewModelProviders
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.menu_inbox_fragment.*
 import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.instance
 import ru.labore.moderngymnasium.R
-import ru.labore.moderngymnasium.data.repository.AppRepository
+import ru.labore.moderngymnasium.ui.adapters.MainRecyclerViewAdapter
 import ru.labore.moderngymnasium.ui.base.ScopedFragment
 
 class MenuInboxFragment : ScopedFragment(), DIAware {
     override val di: DI by lazy { (context as DIAware).di }
 
     private val viewModelFactory: MenuInboxViewModelFactory by instance()
+    private val viewManager: LinearLayoutManager by lazy {
+        LinearLayoutManager(requireActivity())
+    }
 
     private lateinit var viewModel: MenuInboxViewModel
+    private lateinit var viewAdapter: MainRecyclerViewAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -36,19 +39,22 @@ class MenuInboxFragment : ScopedFragment(), DIAware {
             .of(this, viewModelFactory)
             .get(MenuInboxViewModel::class.java)
 
-        mainTextView.text = "Loading..."
-
         bindUI()
     }
 
     private fun bindUI() = launch {
         val announcements = viewModel.announcements.await()
-        var text = ""
 
-        announcements.forEach {
-            text = text.plus(it.toString())
+        inboxProgressBar.visibility = View.GONE
+        inboxProgressBarCaption.visibility = View.GONE
+
+        viewAdapter = MainRecyclerViewAdapter(resources, announcements)
+
+        inboxRecyclerView.apply {
+            setHasFixedSize(true)
+
+            layoutManager = viewManager
+            adapter = viewAdapter
         }
-
-        mainTextView.text = if (text.isEmpty()) "No results found" else text
     }
 }

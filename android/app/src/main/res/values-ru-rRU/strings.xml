@@ -29,8 +29,15 @@
     <string name="create_announcement_label">Объявить</string>
     <string name="enter_announcement_text">Введите текст объявления</string>
 
+    <string name="author_no_name">Безымянный</string>
+    <string name="author_label">Автор: %1$s</string>
+    <string name="role_label">Роль: %1$s</string>
+    <string name="class_label">Класс: %1$s</string>
+    <string name="text_label">Текст: %1$s</string>
+
     <string name="menu_create">Объявить</string>
     <string name="menu_inbox">Объявления</string>
     <string name="menu_profile">Профиль</string>
     <string name="choose_recipient_role">Выберите хотя бы одного получателя</string>
+    <string name="loading">Загрузка…</string>
 </resources>
