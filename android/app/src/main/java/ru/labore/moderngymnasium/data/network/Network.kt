@@ -47,6 +47,14 @@ class AppNetwork(context: Context) : Interceptor {
         limit
     )
 
+    suspend fun countAnnouncements(
+        jwt: String
+    ) = CountAnnouncements(
+        appContext,
+        this,
+        jwt
+    )
+
     suspend fun fetchUser(
         id: Int
     ) = FetchUser(

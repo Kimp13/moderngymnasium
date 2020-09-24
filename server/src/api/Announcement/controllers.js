@@ -56,8 +56,7 @@ module.exports = {
   },
 
   count: async (req, res) => {
-    const { jwt } = jsonify(req.search);
-    let user = await getUser(search.jwt);
+    let user = await getUser(req.headers.authentication);
 
     if (user) {
       user = (await mg.knex('user').where({
@@ -80,8 +79,6 @@ module.exports = {
             'announcement_class_role.role_id',
             user.role_id
           ))[0]['count(*)'];
-
-
 
         res.statusCode = 200;
         res.end(JSON.stringify({

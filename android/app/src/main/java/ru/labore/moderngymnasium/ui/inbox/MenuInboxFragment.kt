@@ -4,8 +4,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.menu_inbox_fragment.*
 import kotlinx.coroutines.launch
 import org.kodein.di.DI
@@ -45,16 +47,28 @@ class MenuInboxFragment : ScopedFragment(), DIAware {
     private fun bindUI() = launch {
         val announcements = viewModel.announcements.await()
 
+        Toast.makeText(requireActivity(), announcements.amount.toString(), Toast.LENGTH_SHORT).show()
+
         inboxProgressBar.visibility = View.GONE
         inboxProgressBarCaption.visibility = View.GONE
 
-        viewAdapter = MainRecyclerViewAdapter(resources, announcements)
+        viewAdapter = MainRecyclerViewAdapter(resources, announcements.data)
 
         inboxRecyclerView.apply {
             setHasFixedSize(true)
 
             layoutManager = viewManager
             adapter = viewAdapter
+
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+
+                    if (!recyclerView.canScrollVertically(1)) {
+                        Toast.makeText(requireActivity(), "Reached!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            })
         }
     }
 }

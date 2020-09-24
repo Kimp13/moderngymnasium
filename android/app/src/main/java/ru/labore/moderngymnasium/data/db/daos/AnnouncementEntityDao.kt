@@ -9,6 +9,11 @@ interface AnnouncementEntityDao {
     fun upsert(announcements: Array<AnnouncementEntity>)
 
     @Query("""
+        select count(id) from announcement
+    """)
+    suspend fun countAnnouncements(): Int
+
+    @Query("""
         select * from announcement
         limit 1 offset :offset
     """)
