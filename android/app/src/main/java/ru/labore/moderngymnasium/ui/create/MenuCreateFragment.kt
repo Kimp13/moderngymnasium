@@ -18,6 +18,8 @@ import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.network.ClientConnectionException
 import ru.labore.moderngymnasium.data.network.ClientErrorException
 import ru.labore.moderngymnasium.ui.base.ScopedFragment
+import ru.labore.moderngymnasium.ui.views.LabelledCheckbox
+import ru.labore.moderngymnasium.ui.views.ParentCheckbox
 import java.net.ConnectException
 import java.util.*
 
@@ -83,43 +85,65 @@ class MenuCreateFragment : ScopedFragment(), DIAware {
         }
 
         for (it in roles) {
-            val checkboxLayout = LinearLayout(activity)
-            val checkboxCaption = TextView(activity)
-            val checkbox = CheckBox(activity)
-
-            checkboxLayout.orientation = LinearLayout.HORIZONTAL
-            checkboxLayout.layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+            val checkboxLayout = ParentCheckbox(
+                activity,
+                when(Locale.getDefault().language) {
+                    "ru" -> it.nameRu
+                    else -> it.name
+                }
             )
 
-            checkbox.isChecked = checkedRoles!!.indexOf(it.id) != -1
-            checkbox.layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                0F
-            )
-            checkboxCaption.layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1F
+            val nestedParent = ParentCheckbox(
+                activity,
+                "Nested Parent"
             )
 
-            checkboxCaption.text = when(Locale.getDefault().language) {
-                "ru" -> it.nameRu
-                else -> it.name
-            }
+            val nestedParentCheckbox = LabelledCheckbox(
+                activity,
+                "Nested Parent Checkbox"
+            )
 
-            checkbox.setOnClickListener {view ->
-                if ((view as CheckBox).isChecked) {
+            val nestedCheckbox = LabelledCheckbox(
+                activity,
+                "Nested Checkbox"
+            )
+//            val checkboxCaption = TextView(activity)
+//            val checkbox = CheckBox(activity)
+//
+//            checkboxLayout.orientation = LinearLayout.HORIZONTAL
+//            checkboxLayout.layoutParams = ViewGroup.LayoutParams(
+//                ViewGroup.LayoutParams.MATCH_PARENT,
+//                ViewGroup.LayoutParams.WRAP_CONTENT
+//            )
+//
+//            checkbox.isChecked = checkedRoles!!.indexOf(it.id) != -1
+//            checkbox.layoutParams = LinearLayout.LayoutParams(
+//                LinearLayout.LayoutParams.WRAP_CONTENT,
+//                LinearLayout.LayoutParams.WRAP_CONTENT,
+//                0F
+//            )
+//            checkboxCaption.layoutParams = LinearLayout.LayoutParams(
+//                0,
+//                LinearLayout.LayoutParams.WRAP_CONTENT,
+//                1F
+//            )
+//
+//            checkboxCaption.text = when(Locale.getDefault().language) {
+//                "ru" -> it.nameRu
+//                else -> it.name
+//            }
+
+            checkboxLayout.checkedChangeHandler = { state ->
+                if (state == ParentCheckbox.CHECKED) {
                     checkedRoles!!.add(it.id)
                 } else {
                     checkedRoles!!.remove(it.id)
                 }
             }
 
-            checkboxLayout.addView(checkboxCaption)
-            checkboxLayout.addView(checkbox)
+            nestedParent.checkboxLayout.addView(nestedParentCheckbox)
+            checkboxLayout.checkboxLayout.addView(nestedParent)
+            checkboxLayout.checkboxLayout.addView(nestedCheckbox)
 
             createAnnouncementRoleChoose.addView(checkboxLayout)
         }
