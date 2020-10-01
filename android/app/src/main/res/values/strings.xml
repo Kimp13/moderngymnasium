@@ -42,6 +42,7 @@
         <!-- Main Activity strings -->
             <!-- Fragment strings -->
                 <!-- Create fragment strings -->
+                    <string name="no_rights_to_announce">No required rights to announce.</string>
                     <string name="hint_create_announcement">Enter text…</string>
                     <string name="create_announcement_label">Announce</string>
                     <string name="enter_announcement_text">Enter announcement text</string>

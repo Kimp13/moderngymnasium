@@ -40,4 +40,5 @@
     <string name="menu_profile">Профиль</string>
     <string name="choose_recipient_role">Выберите хотя бы одного получателя</string>
     <string name="loading">Загрузка…</string>
+    <string name="no_rights_to_announce">Нет необходимых прав для объявления</string>
 </resources>

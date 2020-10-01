@@ -98,6 +98,8 @@ module.exports = {
   },
 
   create: async (req, res) => {
+    console.log(req.body);
+
     if (
       req.body.text &&
       req.body.recipients instanceof Array &&

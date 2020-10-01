@@ -1,16 +1,12 @@
 package ru.labore.moderngymnasium.ui.views
 
 import android.content.Context
-import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.view.children
-import kotlinx.android.synthetic.main.activity_login.view.*
-import ru.labore.moderngymnasium.R
 
 class LabelledCheckbox(
     context: Context,

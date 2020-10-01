@@ -19,8 +19,16 @@ data class AllPermissions(
 data class UserData(
     @SerializedName("first_name")
     val firstName: String? = null,
+
     @SerializedName("last_name")
     val lastName: String? = null,
+
+    @SerializedName("class_id")
+    val classId: Int? = null,
+
+    @SerializedName("role_id")
+    val roleId: Int? = null,
+
     val username: String,
     val permissions: AllPermissions? = null
 )

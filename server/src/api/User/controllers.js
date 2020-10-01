@@ -54,7 +54,7 @@ module.exports = {
 
     try {
       if (mg.cache.usersCount === 0) {
-        const hash = await bcrypt.hash(password, 10);  
+        const hash = await bcrypt.hash(password, 10);
         const user = await (new mg.models.User({
           username,
           password: hash,
@@ -70,7 +70,14 @@ module.exports = {
           res.end(JSON.stringify({
             user: Object.assign({
               isAuthenticated: true
-            }, pick(user, ['first_name', 'last_name', 'username', 'permissions'])),
+            }, pick(user, [
+              'first_name',
+              'last_name',
+              'username',
+              'permissions',
+              'role_id',
+              'class_id'
+            ])),
             jwt
           }));
 
@@ -124,7 +131,14 @@ module.exports = {
         res.statusCode = 200;
         res.end(JSON.stringify({
           jwt,
-          data: pick(user, ['first_name', 'last_name', 'username', 'permissions'])
+          data: pick(user, [
+            'first_name',
+            'last_name',
+            'username',
+            'permissions',
+            'role_id',
+            'class_id'
+          ])
         }));
 
         return;

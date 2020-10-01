@@ -16,7 +16,10 @@ import ru.labore.moderngymnasium.data.sharedpreferences.entities.User
 
 data class UserCredentials(val username: String, val password: String)
 
-data class AnnouncementTextAndRecipients(val text: String, val recipients: Array<Int>)
+data class AnnouncementTextAndRecipients(
+    val text: String,
+    val recipients: HashMap<Int, MutableList<Int>>
+)
 
 data class TokenPayload(val token: String)
 
@@ -67,7 +70,7 @@ interface CreateAnnouncement {
             requestInterceptor: Interceptor,
             jwt: String,
             text: String,
-            recipients: Array<Int>
+            recipients: HashMap<Int, MutableList<Int>>
         ) {
             val okHttpClient = OkHttpClient
                 .Builder()

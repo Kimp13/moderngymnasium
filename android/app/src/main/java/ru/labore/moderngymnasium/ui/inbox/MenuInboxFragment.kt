@@ -12,7 +12,6 @@ import kotlinx.android.synthetic.main.menu_inbox_fragment.*
 import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import org.kodein.di.DIAware
-import org.kodein.di.instance
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.ui.adapters.MainRecyclerViewAdapter

@@ -136,7 +136,7 @@ class AppRepository(
 
     suspend fun createAnnouncement(
         text: String,
-        recipients: Array<Int>
+        recipients: HashMap<Int, MutableList<Int>>
     ) {
         if (user?.jwt != null) {
             CreateAnnouncement(
@@ -349,6 +349,48 @@ class AppRepository(
         getRoles(user!!.data.permissions!!.announcement!!.create!!)
     } else {
         emptyArray()
+    }
+
+    suspend fun getUserClasses(): HashMap<Int, ArrayList<ClassEntity>> {
+        val result: HashMap<Int, ArrayList<ClassEntity>> = HashMap()
+
+        if (user?.data?.classId != null) {
+            val rawClasses = getClasses(arrayOf(user!!.data.classId!!))
+
+            rawClasses.forEach {
+                if (it != null) {
+                    if (result.containsKey(it.grade)) {
+                        result[it.grade]!!.add(it)
+                    } else {
+                        result[it.grade] = arrayListOf(it)
+                    }
+                }
+            }
+        }
+
+        return result
+    }
+
+    private suspend fun getClasses(classesIds: Array<Int>): Array<ClassEntity?> {
+        val result: Array<ClassEntity?> = arrayOfNulls(classesIds.size)
+
+        List(classesIds.size) {
+            GlobalScope.launch {
+                var classEntity = classEntityDao.getClass(classesIds[it])
+
+                if (classEntity == null) {
+                    classEntity = appNetwork.fetchClass(classesIds[it])
+
+                    if (classEntity != null) {
+                        persistFetchedClass(classEntity)
+                    }
+                }
+
+                result[it] = classEntity
+            }
+        }.joinAll()
+
+        return result
     }
 
     private suspend fun getRoles(rolesIds: Array<Int>): Array<RoleEntity?> {
