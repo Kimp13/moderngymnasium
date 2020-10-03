@@ -17,10 +17,16 @@ import ru.labore.moderngymnasium.data.network.*
 import ru.labore.moderngymnasium.data.sharedpreferences.entities.User
 import java.lang.reflect.Type
 
-data class UpdatedAnnouncementInfo(
+data class DeferredAnnouncementInfo(
     val users: HashMap<Int, Deferred<UserEntity?>>,
     val classes: HashMap<Int, Deferred<ClassEntity?>>,
     val roles: HashMap<Int, Deferred<RoleEntity?>>
+)
+
+data class FetchedAnnouncementInfo(
+    val users: HashMap<Int, UserEntity?>,
+    val classes: HashMap<Int, ClassEntity?>,
+    val roles: HashMap<Int, RoleEntity?>
 )
 
 data class AnnouncementsWithCount(
@@ -117,9 +123,9 @@ class AppRepository(
             val actualToken =
                 token ?: sharedPreferences.getString("messaging_token", null)
 
-            if (token?.isNotEmpty() == true) {
+            if (actualToken?.isNotEmpty() == true) {
                 GlobalScope.launch {
-                    appNetwork.pushToken(user!!.jwt, actualToken!!)
+                    appNetwork.pushToken(user!!.jwt, actualToken)
                 }
             }
         }
@@ -163,7 +169,7 @@ class AppRepository(
 
     private suspend fun populateAnnouncementEntity(
         entity: AnnouncementEntity,
-        updated: UpdatedAnnouncementInfo = UpdatedAnnouncementInfo(
+        updated: DeferredAnnouncementInfo = DeferredAnnouncementInfo(
             HashMap(),
             HashMap(),
             HashMap()
@@ -328,7 +334,7 @@ class AppRepository(
             announcements.currentCount = announcements.data.size
         }
 
-        val updated = UpdatedAnnouncementInfo(
+        val updated = DeferredAnnouncementInfo(
             HashMap(),
             HashMap(),
             HashMap()

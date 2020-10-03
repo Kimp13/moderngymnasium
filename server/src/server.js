@@ -75,7 +75,8 @@ const main = () => {
         mg.models = new Object();
         mg.services = new Object();
         mg.cache = {
-          usersTokens: new Object()
+          usersTokens: new Object(),
+          classes: new Object()
         };
 
         Promise.all(
@@ -193,6 +194,23 @@ const main = () => {
 
                     resolve();
                   }, reject);
+            }),
+            new Promise((resolve, reject) => {
+              knex
+                .select('*')
+                .from('class')
+                .then(classes => {
+                  for (const classEntity of classes) {
+                    if (!mg.cache.classes.hasOwnProperty(classEntity.grade)) {
+                      mg.cache.classes[classEntity.grade] = new Object();
+                    }
+
+                    mg.cache.classes[classEntity.grade][classEntity.letter] =
+                      classEntity.id;
+                  }
+
+                  resolve();
+                }, reject);
             })
           ]
         )

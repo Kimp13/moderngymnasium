@@ -1,30 +1,28 @@
-const _ = require('lodash');
+const has = require('lodash/has');
+const set = require('lodash/set');
 
 module.exports = permissionsArray => {
   let permissionObject = new Object();
 
   for (let permission of permissionsArray) {
     if (permission.operation) {
-        if (permission.role_id) {
-          if (_.has(
-            permissionObject,
-            [permission.type, permission.operation]
-          )) {
-            permissionObject[type][operation].push(permission.role_id);
-          } else {
-            _.set(permissionObject, [
-              permission.type,
-              permission.operation
-            ], [permission.role_id]);
-          }
+      if (permission.role_id) {
+        if (has(
+          permissionObject,
+          [permission.type, permission.operation]
+        )) {
+          permissionObject[type][operation].push(permission.role_id);
         } else {
-          _.set(permissionObject, [
+          set(permissionObject, [
             permission.type,
             permission.operation
-          ], true);
+          ], [permission.role_id]);
         }
+      } else {
+        set(permissionObject, permission.type, permission.operation);
+      }
     } else {
-      _.set(permissionObject, permission.type, true);
+      set(permissionObject, permission.type, true);
     }
   }
 

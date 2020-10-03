@@ -1,7 +1,11 @@
 const jsonify = require("../../../utils/searchToJson");
 const getUser = require("../../../utils/getUser");
 const getPermission = require("../../../utils/getPermission");
-const { mapKeys } = require("lodash");
+const permissionClasses = require('../../../utils/parseClasses');
+const mapKeys = require('lodash/mapKeys');
+const tim = require('timsort');
+const binarySearch = require('binary-search');
+const { toNumber } = require("lodash");
 
 module.exports = {
   find: async (req, res) => {
@@ -98,125 +102,117 @@ module.exports = {
   },
 
   create: async (req, res) => {
-    console.log(req.body);
-
     if (
       req.body.text &&
-      req.body.recipients instanceof Array &&
-      req.body.recipients.length > 0
+      req.body.recipients &&
+      typeof req.body.recipients === 'object'
     ) {
-      let user = await getUser(req.headers.authentication);
-      const permission = getPermission(user.permissions, [
-        'announcement',
-        'create'
-      ]);
+      const roleIds = Object.keys(req.body.recipients);
 
-      user.class_id = Number(user.class_id);
+      if (roleIds.length > 0) {
+        const user = await getUser(req.headers.authentication);
+        const multipleClassPermission = getPermission(user.permissions, [
+          'multiple_classes'
+        ]);
+        const createPermission = getPermission(user.permissions, [
+          'announcement',
+          'create'
+        ]);
 
-      if (
-        user &&
-        permission
-      ) {
-        if (permission !== true) {
-          for (let i = 0, j; i < req.body.recipients.length; i += 1) {
-            for (j = 0; j < permission.length; j += 1) {
-              if (req.body.recipients[i] == permission[j]) {
-                break;
-              }
-            }
+        if (
+          user &&
+          createPermission
+        ) {
+          const compFunction = (a, b) => a - b;
+          user.class_id = Number(user.class_id);
 
-            if (j === permission.length) {
+          if (Array.isArray(createPermission)) {
+            const throwErr = () => {
               res.statusCode = 401;
               res.end('{}');
-              return;
+            };
+
+            const permittedClasses = (
+              multipleClassPermission ?
+                permissionClasses(multipleClassPermission) :
+                [user.class_id]
+            );
+
+            tim.sort(createPermission, compFunction);
+            tim.sort(permittedClasses, compFunction);
+
+            console.log(createPermission, permittedClasses);
+
+            for (let i = 0; i < roleIds.length; i += 1) {
+              const numberRoleId = Number(roleIds[i]);
+              if (binarySearch(createPermission, numberRoleId, compFunction) >= 0) {
+                for (const classId of req.body.recipients[roleIds[i]]) {
+                  if (binarySearch(permittedClasses, classId, compFunction) < 0) {
+                    throwErr();
+                    return;
+                  }
+                }
+              } else {
+                throwErr();
+                return;
+              }
             }
           }
-        }
 
-        const announcementId = await new Promise((resolve, reject) => {
-          mg.knex.transaction(t => {
-            const date = new Date();
+          const announcementId = await mg.knex.transaction(t => {
+              const date = new Date();
 
-            t('announcement')
-              .insert({
-                text: req.body.text,
-                created_at: date,
-                author_id: user.id
-              }).then(announcement => {
-                const resolveContext = () => {
-                  t.insert(recipientsArray)
-                    .into('announcement_class_role')
-                    .then(result => {
-                      t.commit().then(commited => {
-                        resolve(announcement[0]);
+              return t('announcement')
+                .insert({
+                  text: req.body.text,
+                  created_at: date,
+                  author_id: user.id
+                }).then(announcement => {
+                  const recipientsArray = new Array();
+
+                  for (let i = 0; i < roleIds.length; i += 1) {
+                    const numberRoleId = Number(roleIds[i]);
+
+                    for (const class_id of req.body.recipients[roleIds[i]]) {
+                      recipientsArray.push({
+                        announcement_id: announcement[0],
+                        role_id: numberRoleId,
+                        class_id
                       });
-                    });
-                };
-
-                const recipientsCriteria = new Array();
-                const recipientsArray = new Array();
-
-                if (permission instanceof Array) {
-                  for (let role of req.body.recipients) {
-                    recipientsArray.push({
-                      announcement_id: announcement[0],
-                      class_id: user.class_id,
-                      role_id: role
-                    });
+                    }
                   }
 
-                  resolveContext();
-                } else {
-                  t.select('id')
-                    .from('role')
-                    .then(roles => {
-                      for (let role of roles) {
-                        recipientsArray.push({
-                          announcement_id: announcement[0],
-                          class_id: user.class_id,
-                          role_id: role.id
-                        });
-                      }
+                  return t.insert(recipientsArray)
+                    .into('announcement_class_role')
+                    .then(() => announcement[0]);
+                });
+            });
 
-                      resolveContext();
-                    });
-                }
-              }, e => {
-                console.log(e);
-                t.rollback();
-              });
-          });
-        });
+          const data =
+            await mg.services.announcement.getAnnouncementAtId(announcementId);
 
-        const data =
-          await mg.services.announcement.getAnnouncementAtId(announcementId);
+          data.created_at = data.created_at.toISOString();
+          data.id = String(data.id);
+          data.author_id = String(data.author_id);
 
-        data.created_at = data.created_at.toISOString();
-        data.id = String(data.id);
-        data.author_id = String(data.author_id);
+          const tokens = await mg
+            .services
+            .announcement
+            .getUsersTokens(announcementId);
 
-        const tokens = await mg
-          .services
-          .announcement
-          .getUsersTokens(announcementId);
+          const message = {
+            data,
+            tokens
+          };
 
-        const message = {
-          data,
-          tokens
-        };
+          const response = await mg.firebaseAdmin.messaging().sendMulticast(message);
+          console.log(response.successCount + ' messages were sent successfully');
 
-        const response = await mg.firebaseAdmin.messaging().sendMulticast(message);
-        console.log(response.successCount + ' messages were sent successfully');
-
-        res.statusCode = 200;
-
-        res.end('{}');
-        return;
+          res.statusCode = 200;
+          res.end('{}');
+          return;
+        }
       }
-
-      res.statusCode = 401;
-      res.end('{}');
-      return;
     }
 
     res.statusCode = 400;
