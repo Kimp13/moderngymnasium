@@ -6,6 +6,7 @@ import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.bottomnavigation.LabelVisibilityMode
 import kotlinx.android.synthetic.main.activity_main.*
 import org.kodein.di.DI
 import org.kodein.di.DIAware
@@ -45,6 +46,8 @@ class MainActivity : AppCompatActivity(), DIAware {
                     bottomNav.selectedItemId = bottomNav.menu.getItem(position).itemId
                 }
             })
+
+            bottomNav.labelVisibilityMode = LabelVisibilityMode.LABEL_VISIBILITY_SELECTED
 
             bottomNav.setOnNavigationItemSelectedListener {
                 loadFragment(it)
