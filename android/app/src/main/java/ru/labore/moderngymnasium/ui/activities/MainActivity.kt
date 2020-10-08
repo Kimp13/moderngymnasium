@@ -3,8 +3,11 @@ package ru.labore.moderngymnasium.ui.activities
 import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.children
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomnavigation.LabelVisibilityMode
 import kotlinx.android.synthetic.main.activity_main.*
@@ -30,9 +33,6 @@ class MainActivity : AppCompatActivity(), DIAware {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
         } else {
-            Toast.makeText(this, repository.user.toString(), Toast.LENGTH_SHORT).show()
-
-            // Navigation Setup
             setSupportActionBar(toolbar)
 
             viewPagerAdapter = MainFragmentPagerAdapter(supportFragmentManager, lifecycle)

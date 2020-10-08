@@ -94,6 +94,8 @@ class AppRepository(
             user = gson.fromJson(userString, User::class.java)
         }
 
+        notificationBuilder.setSmallIcon(R.drawable.ic_baseline_announcement)
+
         appNetwork.fetchedAnnouncementEntities.observeForever {
             persistFetchedAnnouncements(it)
         }
@@ -296,12 +298,14 @@ class AppRepository(
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
                         .setAutoCancel(true)
 
-                    println("Built, notified!")
-
-                    NotificationManagerCompat.from(context).notify(
-                        notificationsCount++,
-                        notificationBuilder.build()
-                    )
+                    try {
+                        NotificationManagerCompat.from(context).notify(
+                            notificationsCount++,
+                            notificationBuilder.build()
+                        )
+                    } catch(e: Exception) {
+                        println(e.message)
+                    }
                 }
             }
         }

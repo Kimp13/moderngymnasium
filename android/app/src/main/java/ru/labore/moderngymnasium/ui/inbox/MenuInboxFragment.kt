@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.menu_inbox_fragment.*
@@ -78,11 +79,14 @@ class MenuInboxFragment : ScopedFragment(), DIAware {
     }
 
     private fun bindUI() = launch {
+        val divider = DividerItemDecoration(requireContext(), viewManager.orientation)
         val announcements = viewModel.announcements.await()
         val params =
             inboxProgressBar.layoutParams as ConstraintLayout.LayoutParams
 
         loading = false
+
+        inboxRecyclerView.addItemDecoration(divider)
 
         overallCount = announcements.overallCount
         currentCount = announcements.currentCount

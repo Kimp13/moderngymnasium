@@ -1,17 +1,22 @@
-<resources xmlns:android="http://schemas.android.com/apk/res/android">
+<resources xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <style name="AppTheme" parent="Theme.MaterialComponents.Light.DarkActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="editTextStyle">@style/AppEditTextStyle</item>
-<!--        <item name="buttonStyle">@style/AppButtonStyle</item>-->
+        <item name="buttonStyle">@style/AppButtonStyle</item>
+        <item name="materialButtonStyle">@style/AppButtonStyle</item>
+        <item name="android:textColor">?android:attr/textColorPrimaryInverse</item>
     </style>
 
-    <style name="AppThemeWithoutActionBar" parent="AppTheme">
-        <item name="android:textViewStyle">@style/AppTextViewStyle</item>
-        <!-- Removing Action Bar -->
+    <style name="AppThemeWithoutActionBar" parent="AppTheme">s
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+        <item name="colorControlNormal">@color/colorPrimary</item>
+        <item name="colorControlActivated">@color/colorAccent</item>
+        <item name="cardViewStyle">@style/AppMaterialCardViewStyle</item>
+        <item name="materialCardViewStyle">@style/AppMaterialCardViewStyle</item>
     </style>
 
     <style name="AppThemeWithActionBar" parent="AppTheme">
@@ -23,8 +28,13 @@
         <item name="titleTextColor">@color/colorPrimary</item>
     </style>
 
+    <style name="AppMaterialCardViewStyle" parent="Widget.MaterialComponents.CardView">
+        <item name="cardBackgroundColor">@color/colorDarkVariant</item>
+    </style>
+
     <style name="AppButtonStyle" parent="Widget.AppCompat.Button">
-        <item name="background">@drawable/button_background</item>
+        <item name="android:background">@drawable/button_background</item>
+        <item name="android:textColor">@color/colorPrimary</item>
         <item name="android:padding">10dp</item>
     </style>
 
@@ -35,13 +45,9 @@
         <item name="android:padding">20dp</item>
     </style>
 
-    <style name="AppTextViewStyle" parent="android:Widget.TextView">
-        <item name="android:textColor">@color/colorPrimary</item>
-    </style>
-
     <style name="AppBottomNavigationView">
         <item name="android:background">@color/colorPrimaryDark</item>
-        <item name="elevation">16dp</item>
+        <item name="elevation">32dp</item>
         <item name="itemBackground">@drawable/bottom_navigation_ripple</item>
         <item name="itemIconTint">@drawable/bottom_navigation_view_color</item>
         <item name="itemTextColor">@drawable/bottom_navigation_view_color</item>

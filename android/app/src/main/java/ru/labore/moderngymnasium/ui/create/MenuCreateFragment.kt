@@ -17,6 +17,7 @@ import ru.labore.moderngymnasium.data.network.ClientErrorException
 import ru.labore.moderngymnasium.ui.base.ScopedFragment
 import ru.labore.moderngymnasium.ui.views.LabelledCheckbox
 import ru.labore.moderngymnasium.ui.views.ParentCheckbox
+import ru.labore.moderngymnasium.utils.hideKeyboard
 import java.net.ConnectException
 import java.util.*
 
@@ -40,7 +41,9 @@ class MenuCreateFragment : ScopedFragment(), DIAware {
 
         loadUI()
 
-        createAnnouncementButton.setOnClickListener {createAnnouncement()}
+        fragmentCreateLayout.setOnClickListener { hideKeyboard() }
+        createAnnouncementRoleChoose.setOnClickListener { hideKeyboard() }
+        createAnnouncementButton.setOnClickListener { createAnnouncement() }
     }
 
     private fun childCheckedChangeHandler(isChecked: Boolean, roleId: Int, classId: Int) {
@@ -54,6 +57,9 @@ class MenuCreateFragment : ScopedFragment(), DIAware {
                 }
             } else {
                 checkedRoles[roleId]?.remove(classId)
+                if (checkedRoles[roleId]?.isEmpty() == true) {
+                    checkedRoles.remove(roleId)
+                }
             }
         } else {
             checkedRoles[roleId] = mutableListOf()
@@ -64,8 +70,6 @@ class MenuCreateFragment : ScopedFragment(), DIAware {
                 checkedRoles[roleId]!!.remove(classId)
             }
         }
-
-        println(checkedRoles.toString())
     }
 
     private fun loadUI() = launch {
@@ -188,6 +192,7 @@ class MenuCreateFragment : ScopedFragment(), DIAware {
     }
 
     private fun createAnnouncement() {
+        println(checkedRoles.toString())
         if (checkedRoles.keys.size == 0) {
             Toast.makeText(
                 requireActivity(),
