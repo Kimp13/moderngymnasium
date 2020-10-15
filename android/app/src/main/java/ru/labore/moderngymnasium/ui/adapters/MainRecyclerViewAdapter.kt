@@ -52,6 +52,7 @@ class MainRecyclerViewAdapter(
     private val clickHandler: (AnnouncementEntity) -> Unit = {}
 ) : RecyclerView.Adapter<MainRecyclerViewAdapter.MainViewHolder>() {
     class MainViewHolder(val card: MaterialCardView) : RecyclerView.ViewHolder(card)
+    var isClickable: Boolean = true
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainViewHolder {
         val card = LayoutInflater.from(parent.context)
@@ -69,7 +70,9 @@ class MainRecyclerViewAdapter(
         val expandButton = linearLayout.getChildAt(2)
 
         holder.card.setOnClickListener{
-            clickHandler(announcements[position])
+            if (isClickable) {
+                clickHandler(announcements[position])
+            }
         }
 
         authorView.text = if (announcements[position].author == null) {

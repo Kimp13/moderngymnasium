@@ -6,7 +6,10 @@ import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 @Dao
 interface AnnouncementEntityDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun upsert(announcements: Array<AnnouncementEntity>)
+    suspend fun upsert(announcement: AnnouncementEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertArray(announcements: Array<AnnouncementEntity>)
 
     @Query("""
         select count(id) from announcement

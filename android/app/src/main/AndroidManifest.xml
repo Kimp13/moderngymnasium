@@ -15,7 +15,7 @@
         android:usesCleartextTraffic="true">
 
         <service
-            android:name=".data.MyFirebaseMessagingService"
+            android:name=".data.AppFirebaseMessagingService"
             android:enabled="true"
             android:exported="false">
             <intent-filter>
@@ -35,6 +35,7 @@
             android:label="@string/login_activity_label"
             android:theme="@style/AppThemeWithActionBar"
             android:windowSoftInputMode="stateVisible|adjustResize" />
+
         <activity
             android:name=".ui.activities.MainActivity"
             android:theme="@style/AppThemeWithoutActionBar"
@@ -48,6 +49,9 @@
 
         <activity android:name=".ui.activities.AnnouncementDetailedActivity"
             android:theme="@style/AppThemeWithActionBar" />
+
+        <activity android:name=".ui.activities.AnnouncementCreateActivity"
+            android:theme="@style/AppThemeWithoutActionBar" />
     </application>
 
 </manifest>

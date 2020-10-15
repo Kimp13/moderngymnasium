@@ -41,4 +41,18 @@
             android:scrollbars="vertical"/>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/inboxAnnounceButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:backgroundTint="@color/colorAccent"
+        android:text="@string/create_announcement_label"
+        android:textAllCaps="false"
+        android:textColor="@color/colorPrimary"
+        app:icon="@drawable/ic_baseline_create"
+        app:iconTint="@color/colorPrimary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

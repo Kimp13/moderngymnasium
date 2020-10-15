@@ -98,19 +98,17 @@ class AppRepository(
     private val appNetwork: AppNetwork
 ) {
     companion object {
-        val HTTP_RESPONSE_CODE_FORBIDDEN = 403
-        val HTTP_RESPONSE_CODE_UNAUTHORIZED = 401
-        val INTERNET_ERROR_SERVER_DOWN = 1
-        val INTERNET_ERROR_NO_CONNECTION = -1
-        val INTERNET_ERROR_NO_INTERNET = 0
+        const val HTTP_RESPONSE_CODE_UNAUTHORIZED = 401
     }
 
     val inboxAnnouncement: MutableLiveData<AnnouncementEntity> =
         MutableLiveData()
 
+    var isAppForeground: Boolean = true
     var user: User? = null
+    var unreadAnnouncements: MutableList<AnnouncementEntity> = mutableListOf()
+    var unreadAnnouncementsPushListener: ((AnnouncementEntity) -> Unit)? = null
 
-    private var notificationsCount: Int = 0
     private val gson = GsonBuilder()
         .registerTypeAdapter(ZonedDateTime::class.java, JsonSerializerImpl())
         .registerTypeAdapter(ZonedDateTime::class.java, JsonDeserializerImpl())
@@ -337,9 +335,12 @@ class AppRepository(
 
                 populateAnnouncementEntity(entity)
 
-                inboxAnnouncement.postValue(entity)
+                persistFetchedAnnouncement(entity)
 
-                if (notify) {
+                unreadAnnouncements.add(0, entity)
+                unreadAnnouncementsPushListener?.invoke(entity)
+
+                if (notify && !isAppForeground) {
                     notificationBuilder
                         .setContentTitle(announcementEntityToCaption(
                             entity,
@@ -351,7 +352,7 @@ class AppRepository(
 
                     try {
                         NotificationManagerCompat.from(context).notify(
-                            notificationsCount++,
+                            entity.id,
                             notificationBuilder.build()
                         )
                     } catch(e: Exception) {
@@ -521,6 +522,14 @@ class AppRepository(
         return result
     }
 
+    private suspend fun persistFetchedAnnouncement(
+        fetchedAnnouncement: AnnouncementEntity
+    ) {
+        fetchedAnnouncement.updatedAt = ZonedDateTime.now()
+
+        announcementEntityDao.upsert(fetchedAnnouncement)
+    }
+
     private fun persistFetchedAnnouncements(
         fetchedAnnouncements: Array<AnnouncementEntity>
     ) {
@@ -531,7 +540,7 @@ class AppRepository(
         }
 
         GlobalScope.launch(Dispatchers.IO) {
-            announcementEntityDao.upsert(fetchedAnnouncements)
+            announcementEntityDao.upsertArray(fetchedAnnouncements)
         }
     }
 

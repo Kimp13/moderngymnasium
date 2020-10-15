@@ -3,12 +3,9 @@ package ru.labore.moderngymnasium.ui.activities
 import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.children
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.LabelVisibilityMode
 import kotlinx.android.synthetic.main.activity_main.*
 import org.kodein.di.DI
@@ -17,12 +14,12 @@ import org.kodein.di.instance
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.repository.AppRepository
 import ru.labore.moderngymnasium.ui.adapters.MainFragmentPagerAdapter
-import ru.labore.moderngymnasium.utils.hideKeyboard
 
 class MainActivity : AppCompatActivity(), DIAware {
     override val di: DI by lazy { (applicationContext as DIAware).di }
 
     private lateinit var viewPagerAdapter: MainFragmentPagerAdapter
+    private var inboxBadge: BadgeDrawable? = null
     private val repository: AppRepository by instance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,7 +34,6 @@ class MainActivity : AppCompatActivity(), DIAware {
 
             viewPagerAdapter = MainFragmentPagerAdapter(supportFragmentManager, lifecycle)
             navHostFragment.adapter = viewPagerAdapter
-            
             navHostFragment.registerOnPageChangeCallback(object :
                 ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
@@ -48,6 +44,8 @@ class MainActivity : AppCompatActivity(), DIAware {
             })
 
             bottomNav.labelVisibilityMode = LabelVisibilityMode.LABEL_VISIBILITY_SELECTED
+            inboxBadge = bottomNav.getOrCreateBadge(bottomNav.menu.getItem(0).itemId)
+            inboxBadge?.isVisible = false
 
             bottomNav.setOnNavigationItemSelectedListener {
                 loadFragment(it)
@@ -56,6 +54,13 @@ class MainActivity : AppCompatActivity(), DIAware {
             bottomNav.setOnNavigationItemReselectedListener {
                 loadFragment(it)
             }
+        }
+    }
+
+    fun updateInboxBadge(newNumber: Int) {
+        inboxBadge?.apply {
+            isVisible = newNumber > 0
+            number = newNumber
         }
     }
 

@@ -1,9 +1,11 @@
 package ru.labore.moderngymnasium.ui.inbox
 
+import android.animation.Animator
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewAnimationUtils
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -12,6 +14,7 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.menu_inbox_fragment.*
 import kotlinx.coroutines.launch
 import org.kodein.di.DI
@@ -22,11 +25,14 @@ import ru.labore.moderngymnasium.data.network.ClientConnectionException
 import ru.labore.moderngymnasium.data.network.ClientErrorException
 import ru.labore.moderngymnasium.data.repository.AnnouncementsWithCount
 import ru.labore.moderngymnasium.data.repository.AppRepository
+import ru.labore.moderngymnasium.ui.activities.AnnouncementCreateActivity
 import ru.labore.moderngymnasium.ui.activities.AnnouncementDetailedActivity
 import ru.labore.moderngymnasium.ui.activities.LoginActivity
+import ru.labore.moderngymnasium.ui.activities.MainActivity
 import ru.labore.moderngymnasium.ui.adapters.MainRecyclerViewAdapter
 import ru.labore.moderngymnasium.ui.base.ScopedFragment
 import java.net.ConnectException
+import kotlin.math.hypot
 import kotlin.properties.Delegates
 
 class MenuInboxFragment : ScopedFragment(), DIAware {
@@ -54,8 +60,14 @@ class MenuInboxFragment : ScopedFragment(), DIAware {
 
         bindUI(savedInstanceState)
 
-        viewModel.appRepository.inboxAnnouncement.observe(viewLifecycleOwner) {
+        viewModel.appRepository.unreadAnnouncementsPushListener = {
             viewAdapter.prependAnnouncement(it)
+
+            requireActivity().let { activity ->
+                if (activity is MainActivity) {
+                    activity.updateInboxBadge(viewModel.appRepository.unreadAnnouncements.size)
+                }
+            }
         }
     }
 
@@ -75,7 +87,7 @@ class MenuInboxFragment : ScopedFragment(), DIAware {
                     is ClientConnectionException -> getString(R.string.no_internet)
                     is ClientErrorException -> {
                         if (e.errorCode == AppRepository.HTTP_RESPONSE_CODE_UNAUTHORIZED) {
-                            viewModel.cleanseUser()
+                            viewModel.appRepository.user = null
                             startActivity(Intent(activity, LoginActivity::class.java))
                             activity.finish()
                         }
@@ -170,6 +182,29 @@ class MenuInboxFragment : ScopedFragment(), DIAware {
             scrollBy(0, savedInstanceState?.getInt("scrollY") ?: 0)
 
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+
+                    if (layoutManager is LinearLayoutManager) {
+                        val firstItemIndex = (layoutManager as LinearLayoutManager)
+                            .findFirstCompletelyVisibleItemPosition()
+
+                        viewModel.appRepository.unreadAnnouncements.let { list ->
+                            if (firstItemIndex < list.size) {
+                                for (i in list.size - 1 downTo firstItemIndex) {
+                                    list.removeAt(i)
+                                }
+
+                                requireActivity().let {
+                                    if (it is MainActivity) {
+                                        it.updateInboxBadge(list.size)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
 
@@ -179,8 +214,26 @@ class MenuInboxFragment : ScopedFragment(), DIAware {
                     ) {
                         addNewAnnouncements()
                     }
+
+                    if (recyclerView.canScrollVertically(-1)) {
+                        inboxAnnounceButton.shrink()
+                    } else {
+                        inboxAnnounceButton.extend()
+                    }
                 }
             })
+        }
+
+        inboxAnnounceButton.setOnClickListener {
+            val location = IntArray(2)
+            val intent = Intent(requireContext(), AnnouncementCreateActivity::class.java)
+
+            inboxAnnounceButton.getLocationInWindow(location)
+            intent.putExtra("x", location[0] + it.width / 2)
+            intent.putExtra("y", location[1] - it.height / 2)
+            intent.putExtra("radius", it.height.toFloat())
+
+            startActivity(intent)
         }
     }
 
@@ -192,5 +245,11 @@ class MenuInboxFragment : ScopedFragment(), DIAware {
             viewAdapter.announcements.toTypedArray()
         ))
         super.onSaveInstanceState(outState)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        viewModel.appRepository.unreadAnnouncementsPushListener = null
     }
 }

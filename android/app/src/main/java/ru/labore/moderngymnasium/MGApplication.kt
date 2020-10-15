@@ -4,6 +4,10 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.jakewharton.threetenabp.AndroidThreeTen
 import org.kodein.di.*
 import org.kodein.di.android.x.androidXModule
@@ -12,7 +16,7 @@ import ru.labore.moderngymnasium.data.network.AppNetwork
 import ru.labore.moderngymnasium.data.repository.AppRepository
 import ru.labore.moderngymnasium.ui.activities.AnnouncementDetailedActivity
 
-class MGApplication : Application(), DIAware {
+class MGApplication : Application(), DIAware, LifecycleObserver {
     override val di = DI.lazy {
         import(androidXModule(this@MGApplication))
 
@@ -31,9 +35,11 @@ class MGApplication : Application(), DIAware {
             instance()
         ) }
     }
+    private val repository: AppRepository by instance()
 
     override fun onCreate() {
         super.onCreate()
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
 
         AndroidThreeTen.init(this)
 
@@ -48,5 +54,15 @@ class MGApplication : Application(), DIAware {
             (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
                 .createNotificationChannel(channel)
         }
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+    fun onAppBackgrounded() {
+        repository.isAppForeground = false
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+    fun onAppForegrounded() {
+        repository.isAppForeground = true
     }
 }

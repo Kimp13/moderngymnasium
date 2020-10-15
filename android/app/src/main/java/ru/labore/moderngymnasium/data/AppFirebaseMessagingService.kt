@@ -9,7 +9,7 @@ import org.kodein.di.instance
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.data.repository.AppRepository
 
-class MyFirebaseMessagingService : FirebaseMessagingService(), DIAware {
+class AppFirebaseMessagingService : FirebaseMessagingService(), DIAware {
     override val di: DI by lazy { (applicationContext as DIAware).di }
 
     private val repository: AppRepository by instance()
@@ -20,16 +20,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService(), DIAware {
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        println("From: ${remoteMessage.from}")
-
         if (remoteMessage.data.isNotEmpty()) {
-            println("Message data payload: ${remoteMessage.data}")
-
             repository.pushNewAnnouncement(remoteMessage.data)
-        }
-
-        remoteMessage.notification?.let {
-            println("Message Notification Body: ${it.body}")
         }
     }
 }
