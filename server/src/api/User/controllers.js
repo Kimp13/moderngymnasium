@@ -55,11 +55,17 @@ module.exports = {
     try {
       if (mg.cache.usersCount === 0) {
         const hash = await bcrypt.hash(password, 10);
-        const user = await (new mg.models.User({
-          username,
-          password: hash,
-          role_id: 1
-        }).save());
+        const user = await mg.knex
+          .select('*')
+          .from('user')
+          .where('id', (
+            await mg.knex('user')
+              .insert({
+                username,
+                password: hash,
+                role_id: 1
+              })
+          )[0]);
 
         const jwt = mg.services.jwt.issue({
           id: user.attributes.id
@@ -112,11 +118,23 @@ module.exports = {
       password.length > 8 &&
       !/[^0-9a-zA-Z#$*_]/.test(username)
     ) {
-      const user = (await mg.models.User.where({
-        username
-      }).fetch({
-        withRelated: ['role.permissions']
-      })).toJSON();
+      const user = await mg.knex
+        .select('*')
+        .from('user')
+        .where('username', username);
+
+      user.permissions = await mg.knex
+        .select('*')
+        .from('permissions')
+        .innerJoin(
+          'permission_role',
+          'permission_role.permission_id',
+          'permission.id'
+        )
+        .where(
+          'permission_role.role_id',
+          user.role_id
+        );
 
       if (
         user &&
@@ -126,7 +144,7 @@ module.exports = {
           id: user.id
         });
 
-        user.permissions = parsePermissions(user.role.permissions);
+        user.permissions = parsePermissions(user.permissions);
 
         res.statusCode = 200;
         res.end(JSON.stringify({
