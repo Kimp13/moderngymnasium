@@ -9,7 +9,7 @@ import * as sapper from '@sapper/server';
 
 // database
 import Knex from 'knex';
-import Kmm from 'knex-model-management';
+import Kmm from '../knex-model-management/index';
 
 // filesystem
 import path from 'path';
@@ -64,7 +64,6 @@ const firebaseServiceAccount = require(process.cwd() + PATH_TO_FIREBASE_KEY);
  */
 const main = () => {
   // proceed if connected to database
-  knex.raw('describe user').then(value => console.log(value[0]));
   knex.raw('select 1 + 1 as testValue').then(() => {
     fs.readdir(modelsPath, (err, files) => {
       if (err) {

@@ -2,7 +2,7 @@
   export async function preload(page, session) {
     return {
       props: await (await this.fetch(session.apiUrl + "/users/count")).json(),
-      apiUrl: session.apiUrl
+      apiUrl: session.apiUrl,
     };
   }
 </script>
@@ -13,9 +13,13 @@
   import { setCookie } from "../../utils/cookies";
 
   export let apiUrl, props;
-  let username, password, passwordRepeat,
-      usernameError, passwordError, passwordRepeatError,
-      signUpPromise = new Promise((resolve, reject) => resolve(null));
+  let username,
+    password,
+    passwordRepeat,
+    usernameError,
+    passwordError,
+    passwordRepeatError,
+    signUpPromise = new Promise((resolve, reject) => resolve(null));
   const { page, session } = stores();
   const user = $session.user;
 
@@ -80,13 +84,13 @@
               maxAge: 1296000,
             });
 
-            session.update(oldSession => {
+            session.update((oldSession) => {
               oldSession.user = json.user;
 
               return oldSession;
             });
 
-            goto('/');
+            goto("/");
           },
           (e) => {
             console.log(e);
@@ -222,59 +226,57 @@
     <button class="logout" on:click={logout}> Выйти </button>
     <button class="continue" on:click={redirect}> Продолжить </button>
   </div>
+{:else if isSignup}
+  <form class="signup" on:submit|preventDefault={signup}>
+    <h1>Регистрация</h1>
+    <input
+      class="key-input"
+      autocomplete="username"
+      placeholder="Логин"
+      maxlength="32"
+      bind:value={username} />
+    {#if usernameError}
+      <p class="error">{usernameError}</p>
+    {/if}
+    <input
+      class="key-input"
+      type="password"
+      autocomplete="new-password"
+      placeholder="Пароль"
+      maxlength="128"
+      bind:value={password} />
+    {#if passwordError}
+      <p class="error">{passwordError}</p>
+    {/if}
+    <input
+      class="key-input"
+      type="password"
+      autocomplete="new-password"
+      placeholder="Повтор пароля"
+      maxlength="128"
+      bind:value={passwordRepeat} />
+    {#if passwordRepeatError}
+      <p class="error">{passwordRepeatError}</p>
+    {/if}
+    {#await signUpPromise}
+      <p class="await">Ждём ответа...</p>
+    {:then resolveValue}
+      {#if resolveValue === null}
+        <input
+          class="submit"
+          class:disabled={usernameError || passwordError || passwordRepeatError}
+          type="submit"
+          value="Зарегистрироваться" />
+      {:else}
+        <p class="await">Перенаправляем...</p>
+      {/if}
+    {:catch}
+      <p class="error">
+        К сожалению, что-то пошло не так. Пожалуйста, перезагрузите страницу и
+        попробуйте снова.
+      </p>
+    {/await}
+  </form>
 {:else}
-  {#if isSignup}
-    <form class="signup" on:submit|preventDefault={signup}>
-      <h1>Регистрация</h1>
-      <input
-        class="key-input"
-        autocomplete="username"
-        placeholder="Логин"
-        maxlength="32"
-        bind:value={username} />
-      {#if usernameError}
-        <p class="error">{usernameError}</p>
-      {/if}
-      <input
-        class="key-input"
-        type="password"
-        autocomplete="new-password"
-        placeholder="Пароль"
-        maxlength="128"
-        bind:value={password} />
-      {#if passwordError}
-        <p class="error">{passwordError}</p>
-      {/if}
-      <input
-        class="key-input"
-        type="password"
-        autocomplete="new-password"
-        placeholder="Повтор пароля"
-        maxlength="128"
-        bind:value={passwordRepeat} />
-      {#if passwordRepeatError}
-        <p class="error">{passwordRepeatError}</p>
-      {/if}
-      {#await signUpPromise}
-        <p class="await">Ждём ответа...</p>
-      {:then resolveValue}
-        {#if resolveValue === null}
-          <input
-            class="submit"
-            class:disabled={usernameError || passwordError || passwordRepeatError}
-            type="submit"
-            value="Зарегистрироваться" />
-        {:else}
-          <p class="await">Перенаправляем...</p>
-        {/if}
-      {:catch}
-        <p class="error">
-          К сожалению, что-то пошло не так. Пожалуйста, перезагрузите страницу и
-          попробуйте снова.
-        </p>
-      {/await}
-    </form>
-  {:else}
-    <form class="signin" on:submit|preventDefault={signin} />
-  {/if}
+  <form class="signin" on:submit|preventDefault={signin} />
 {/if}
