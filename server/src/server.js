@@ -212,6 +212,9 @@ const main = () => {
       )
         .then(() => kmm.init(mg.models))
         .then(() => {
+          kmm.query('role').find({id_nin: [1]}).then(res => console.log(res));
+        })
+        .then(() => {
           // Initialize Firebase
           mg.firebaseAdmin.initializeApp({
             credential: mg.firebaseAdmin.credential.cert(firebaseServiceAccount),

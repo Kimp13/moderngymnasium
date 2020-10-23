@@ -1,6 +1,136 @@
+const parseArgs = (query, args = {}, property = 'where') => {
+  let result = query;
+  const keys = Object.keys(args);
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+    const method = i ? property : 'where';
+
+    if (key === '_or') {
+      result = result[method](builder => {parseArgs(
+        builder,
+        args._or,
+        'orWhere'
+      )});
+    } else if (key === '_and') {
+      result = result[method](builder => {parseArgs(
+        builder,
+        args._and,
+        'where'
+      )});
+    } else {
+      const lastLoDash = key.lastIndexOf('_'); // Sounds like a film name :)
+      let column, end;
+
+      if (lastLoDash === -1) {
+        column = key;
+        end = '';
+      } else {
+        column = key.substring(0, lastLoDash); // No one likes to see
+        end = key.substring(lastLoDash + 1); // Last Lo Dash :(
+      }
+
+      if (end === 'ne') {
+        result = result[method](column, '<>', args[key]);
+      } else if (end === 'lt') {
+        result = result[method](column, '<', args[key]);
+      } else if (end === 'gt') {
+        result = result[method](column, '>', args[key]);
+      } else if (end === 'lte') {
+        result = result[method](column, '<=', args[key]);
+      } else if (end === 'gte') {
+        result = result[method](column, '>=', args[key]);
+      } else if (end === 'in') {
+        result = result[method + 'In'](column, args[key]);
+      } else if (end === 'nin') {
+        result = result[method + 'NotIn'](column, args[key]);
+      } else if (end === 'contains') {
+        result = result[method](column, 'like', `%${args[key]}%`);
+      } else if (end === 'ncontains') {
+        result = result[method](column, 'not like', `%${args[key]}%`);
+      } else if (end === 'containss') {
+        result = result[method + 'Raw'](
+          `?? like binary '%${args[key]}%'`,
+          column
+        );
+      } else if (end === 'ncontainss') {
+        result = result[method + 'Raw'](
+          `?? not like binary '%${args[key]}%'`,
+          column
+        );
+      } else {
+        result = result[method](column, '=', args[key]);
+      }
+    }
+  }
+
+  return result;
+};
+
 class KnexManageModel {
-  constructor(model) {
-    console.log(`Model of table ${model.tableName} created!`);
+  constructor(knex, model) {
+    this.model = model;
+    this.knex = knex;
+  }
+
+  _findBase (args = {}) {
+    const [orderColumn, orderType] = (
+      args.hasOwnProperty('_sort') ?
+      args._sort.split(':') :
+      [false]
+    );
+
+    const limit = (
+      args.hasOwnProperty('_limit') ?
+      args._limit :
+      100
+    );
+
+    const offset = (
+      args.hasOwnProperty('_skip') ?
+      args._skip :
+      0
+    );
+
+    delete args._sort;
+    delete args._limit;
+    delete args._skip;
+      
+    let query = parseArgs(
+      this.knex
+        .select('*')
+        .from(this.model.tableName),
+      args
+    );
+
+    if (orderColumn !== false) {
+      query = query.orderBy(orderColumn, orderType);
+    }
+
+    query = query.limit(limit);
+    query = query.offset(offset);
+
+    return query;
+  }
+
+  find (args = {}) {
+    return this._findBase(args);
+  }
+
+  findOne (args = {}) {
+    args._limit = 1;
+
+    return this._findBase(args).then(result => result[0]);
+  }
+
+  delete (args = {}) {
+    return parseArgs(this.knex(model.tableName), args)
+      .del();
+  }
+
+  update (where = {}, set = {}) {
+    return parseArgs(this.knex(model.tableName), where)
+      .update(set);
   }
 };
 
@@ -57,7 +187,7 @@ const heavyInit = (table, name, column, uniques, foreigns) => {
   return dbColumn;
 }
 
-const models = new Object();
+const _models = new Object();
 
 module.exports = knex => ({
   init: models => {
@@ -67,7 +197,7 @@ module.exports = knex => ({
       Promise.all(
         Object.keys(models).map(key => new Promise((resolve, reject) => {
           const res = () => {
-            models[model.tableName] = new KnexManageModel(model);
+            _models[model.tableName] = new KnexManageModel(knex, model);
             resolve();
           };
 
@@ -266,5 +396,7 @@ module.exports = knex => ({
         }))
       )).then(resolve);
     })
-  }
+  },
+
+  query: name => _models[name]
 });
