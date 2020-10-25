@@ -19,7 +19,7 @@
 </script>
 
 <style lang="sass">
-  @import "../styles/theme"
+  @import "../theme/colors"
 
   .logout
     margin: 0 auto
@@ -29,7 +29,7 @@
     
     h2,
     h3
-      color: $color_green
+      color: $color-green
       text-align: left
 </style>
 

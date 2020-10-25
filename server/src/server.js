@@ -1,15 +1,14 @@
 // server dependencies
 import dotenv from 'dotenv';
-import sirv from 'sirv';
-import polka from 'polka';
-import cookie from 'cookie';
+import express from 'express';
 import bodyParser from 'body-parser';
+import cookie from 'cookie';
 import compression from 'compression';
 import * as sapper from '@sapper/server';
 
 // database
 import Knex from 'knex';
-import Kmm from '../knex-model-management/index';
+import kmm from '../knex-model-management';
 
 // filesystem
 import path from 'path';
@@ -33,7 +32,6 @@ const knex = new Knex({
     charset: process.env.DB_CHARSET || 'utf8'
   }
 });
-const kmm = Kmm(knex);
 
 // working with filesystem
 const srcPath = path.join(process.cwd(), 'src');
@@ -210,18 +208,23 @@ const main = () => {
           })
         ]
       )
-        .then(() => kmm.init(mg.models))
-        .then(() => {
-          kmm.query('role').find({id_nin: [1]}).then(res => console.log(res));
-        })
+        .then(() => kmm.init(knex, mg.models))
         .then(() => {
           // Initialize Firebase
           mg.firebaseAdmin.initializeApp({
-            credential: mg.firebaseAdmin.credential.cert(firebaseServiceAccount),
+            credential: mg
+              .firebaseAdmin
+              .credential
+              .cert(firebaseServiceAccount),
             databaseURL: 'https://modern-gymnasium.firebaseio.com'
           });
 
-          polka()
+          // Set Query function
+          mg.query = kmm.query;
+
+          const app = express();
+
+          app
             .use(bodyParser.json({ extended: true }))
             .use(async (req, res, next) => {
               const start = new Date();
@@ -231,79 +234,73 @@ const main = () => {
               const ms = Date.now() - start.getTime();
 
               console.log(
-                `${start.toLocaleString()} | ${res.statusCode} ${req.method} on ` +
-                req.url + ' took ' + ms + ' ms'
+                `${start.toLocaleString()} | ${res.statusCode} ` +
+                `${req.method} on ${req.originalUrl} took ${ms} ms`
               );
             })
+            .use('/api', async (req, res, next) => {
+              req.cookies = cookie.parse(req.headers.cookie || '');
+              req.search = req.url.substring(req.path.length + 1);
+
+              const path = (
+                req.path[req.path.length - 1] === '/' ?
+                  req.path :
+                  req.path + '/'
+              );
+
+              if (
+                mg.paths.hasOwnProperty(req.method) &&
+                mg.paths[req.method].hasOwnProperty(path)
+              ) {
+                try {
+                  await mg.paths[req.method][path](req, res);
+                } catch (e) {
+                  console.log(e);
+
+                  res.statusCode = 500;
+                  res.end('{}');
+                }
+              } else {
+                res.statusCode = 404;
+                res.end('{}');
+              }
+
+              return;
+            })
+            .use('/admin', kmm.subapp('/admin'))
+            .use(compression({ threshold: 0 }))
+            .use(express.static('static'))
             .use(async (req, res, next) => {
               req.cookies = cookie.parse(req.headers.cookie || '');
 
-              const questionMarkIndex = req.url.indexOf('?');
-
-              if (questionMarkIndex === -1) {
-                req.path = req.url;
-                req.search = '';
-              } else {
-                req.path = req.url.substring(0, questionMarkIndex);
-                req.search = req.url.substring(questionMarkIndex + 1);
-              }
-
-              if (req.path.substring(0, 4) === '/api') {
-                req.path = req.path.substring(4);
-
-                if (req.path.charAt(req.path.length - 1) !== '/') {
-                  req.path += '/';
-                }
-
-                if (
-                  mg.paths.hasOwnProperty(req.method) &&
-                  mg.paths[req.method].hasOwnProperty(req.path)
-                ) {
-                  try {
-                    await mg.paths[req.method][req.path](req, res);
-                  } catch (e) {
-                    console.log(e);
-
-                    res.statusCode = 500;
-                    res.end('{}');
-                  }
-                } else {
-                  res.statusCode = 404;
-                  res.end('{}');
-                }
-
-                return;
-              } else {
-                await next();
-              }
-            })
-            .use(compression({ threshold: 0 }))
-            .use(sirv('static', { dev }))
-            .use(async (req, res, next) => {
-              let user = await getUser(req.cookies.jwt);
-
-              if (user) {
-                user = Object.assign({
-                  isAuthenticated: true
-                }, _.pick(user, ['first_name', 'last_name', 'username', 'permissions']))
-              } else {
-                user = {
-                  isAuthenticated: false
-                }
-              }
+              const user = await getUser(req.cookies.jwt);
 
               sapper.middleware({
                 session: () => {
                   return {
                     apiUrl: API_URL,
-                    user
+                    user: (
+                      user ?
+                        Object.assign({
+                          isAuthenticated: true
+                        }, _.pick(user, [
+                          'first_name',
+                          'last_name',
+                          'username',
+                          'permissions'
+                        ])) :
+                        {
+                          isAuthenticated: false
+                        }
+                    )
                   };
                 }
               })(req, res, next);
-            })
-            .listen(PORT, err => {
-              if (err) console.log('error', err);
             });
+
+          app.listen(PORT, err => {
+            if (err) console.log('error', err);
+          });
         }, e => {
           console.log(e);
         });

@@ -108,7 +108,7 @@
 </script>
 
 <style lang="sass">
-  @import "../styles/global"
+  @import "../theme/colors"
 
   form,
   .already-registered
@@ -120,27 +120,27 @@
 
   form
     h1
-      color: $color_blue
+      color: $color-blue
       text-align: center
 
     .error
       text-align: center
-      color: $color_error_red
+      color: $mdc-theme-error
       font-size: .8rem
       width: 85%
       margin: .75rem auto
 
     .await
       text-align: right
-      color: $color_green
+      color: $color-green
       width: 90%
       margin: .75rem 10% 0 0
 
     input
       display: block
       font-size: 1rem
-      color: $color_green
-      border-bottom: .1rem solid $color_green
+      color: $color-green
+      border-bottom: .1rem solid $color-green
       padding: .25rem .5rem
       font-family: defaultFont
       font-weight: 700
@@ -165,8 +165,8 @@
           cursor: not-allowed
 
       &:not(.disabled):hover
-        color: $color_gray
-        background: $color_green
+        color: $color-gray
+        background: $color-green
         cursor: pointer
 
   .already-registered
@@ -177,7 +177,7 @@
     h2,
     p
       text-align: center
-      color: $color_green
+      color: $color-green
       margin: .5em 0
     
     button
@@ -194,19 +194,19 @@
         cursor: pointer
 
     .logout
-      color: $color_error_red
-      border-color: $color_error_red
+      color: $mdc-theme-error
+      border-color: $mdc-theme-error
 
       &:hover
-        background-color: $color_error_red
+        background-color: $mdc-theme-error
         color: white
 
     .continue
-      color: $color_blue
-      border-color: $color_blue
+      color: $color-blue
+      border-color: $color-blue
 
       &:hover
-        background-color: $color_blue
+        background-color: $color-blue
         color: white
 </style>
 

@@ -3,7 +3,6 @@ import replace from '@rollup/plugin-replace';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import svelte from 'rollup-plugin-svelte';
-import sveltePreprocess from 'svelte-preprocess';
 import postcss from "rollup-plugin-postcss";
 import babel from '@rollup/plugin-babel';
 import { terser } from 'rollup-plugin-terser';
@@ -11,6 +10,8 @@ import config from 'sapper/config/rollup.js';
 import pkg from './package.json';
 
 import path from 'path';
+
+const preprocess = require('./svelte.config');
 
 const mode = process.env.NODE_ENV;
 const dev = mode === 'development';
@@ -20,15 +21,6 @@ const onwarn = (warning, onwarn) =>
 	(warning.code === 'MISSING_EXPORT' && /'preload'/.test(warning.message)) ||
 	(warning.code === 'CIRCULAR_DEPENDENCY' && /[/\\]@sapper[/\\]/.test(warning.message)) ||
   onwarn(warning);
-  
-/**
- * svelte-preprocess
- */
-const preprocess = sveltePreprocess({
-  sass: {
-    includePaths: ['./src/theme']
-  }
-});
 
 const postcssConfig = () => ({
   extensions: [".scss", ".sass"],
@@ -41,8 +33,6 @@ const postcssConfig = () => ({
         includePaths: [
           "./src/theme",
           "./node_modules",
-          // This is only needed because we're using a local module. :-/
-          // Normally, you would not need this line.
           path.resolve(__dirname, "..", "node_modules")
         ]
       }
@@ -65,7 +55,7 @@ export default {
 				hydratable: true,
         emitCss: false,
         css: true,
-        preprocess
+        ...preprocess
 			}),
 			resolve({
 				browser: true,
@@ -115,7 +105,7 @@ export default {
         emitCss: false,
         css: true,
         dev,
-        preprocess
+        ...preprocess
 			}),
 			resolve({
 				dedupe: ['svelte']
@@ -144,5 +134,5 @@ export default {
 
 		preserveEntrySignatures: false,
 		onwarn,
-  },
+  }
 };
