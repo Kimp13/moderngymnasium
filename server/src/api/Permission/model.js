@@ -13,11 +13,14 @@ module.exports = {
     },
 
     role_id: {
-      type: 'integer',
-      foreign: {
-        table: 'role',
-        column: 'id'
-      }
+      type: 'integer'
     }
-  }
+  },
+
+  relations: [
+    {
+      type: 'many:many',
+      with: 'role'
+    }
+  ]
 };

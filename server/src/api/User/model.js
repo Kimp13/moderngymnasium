@@ -16,7 +16,8 @@ module.exports = {
     username: {
       type: 'string',
       length: 32,
-      notNull: true
+      notNull: true,
+      unique: true
     },
 
     password: {
@@ -29,7 +30,12 @@ module.exports = {
   relations: [
     {
       type: 'many:one',
-      with: ['role', 'kmm_admin']
+      with: 'role'
+    },
+
+    {
+      type: 'many:one',
+      with: 'class'
     }
   ]
 };

@@ -7,19 +7,11 @@ module.exports = async jwt => {
     if (payload) {
       const user = await mg.query('user').findOne({
         id: payload.id
-      });
+      }, ['role.permission']);
 
       if (user) {
         user.permissions = parsePermissions(
-          await mg.knex
-            .select('*')
-            .from('permissions')
-            .innerJoin(
-              'permission_role',
-              'permission_role.permission_id',
-              'permission.id'
-            )
-            .where('permission_role.role_id', user.role_id)
+          user._relations.role._relations.permission
         );
   
         return user;

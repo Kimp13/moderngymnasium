@@ -1,7 +1,9 @@
 <script context="module">
   export async function preload(page, session) {
     return {
-      props: await (await this.fetch(session.apiUrl + "/users/count")).json(),
+      props: await (
+        await this.fetch(session.apiUrl + "/users/count")
+      ).json(),
       apiUrl: session.apiUrl,
     };
   }
@@ -9,8 +11,11 @@
 
 <script>
   import { goto, stores } from "@sapper/app";
-  import { postApi } from "../../utils/requests.js";
-  import { setCookie } from "../../utils/cookies";
+  import { postApi } from "requests";
+  import { setCookie } from "cookies";
+
+  import Title from "Title.svelte";
+  import SignIn from "auth/SignIn.svelte";
 
   export let apiUrl, props;
   let username,
@@ -90,7 +95,7 @@
               return oldSession;
             });
 
-            goto("/");
+            redirect();
           },
           (e) => {
             console.log(e);
@@ -104,11 +109,23 @@
     }
   };
 
-  const signin = (e) => {};
+  const signed = (e) => {
+    setCookie("jwt", e.detail.jwt, {
+      sameSite: "Strict",
+      maxAge: 1296000,
+    });
+
+    session.update((oldSession) => {
+      oldSession.user = e.detail.data;
+      return oldSession;
+    });
+
+    redirect();
+  };
 </script>
 
 <style lang="sass">
-  @import "../theme/colors"
+  @import "colors"
 
   form,
   .already-registered
@@ -125,7 +142,7 @@
 
     .error
       text-align: center
-      color: $mdc-theme-error
+      color: $color-error
       font-size: .8rem
       width: 85%
       margin: .75rem auto
@@ -194,11 +211,11 @@
         cursor: pointer
 
     .logout
-      color: $mdc-theme-error
-      border-color: $mdc-theme-error
+      color: $color-error
+      border-color: $color-error
 
       &:hover
-        background-color: $mdc-theme-error
+        background-color: $color-error
         color: white
 
     .continue
@@ -210,13 +227,11 @@
         color: white
 </style>
 
-<svelte:head>
-  {#if isSignup}
-    <title>Регистрация • moderngymnasium</title>
-  {:else}
-    <title>Вход • moderngymnasium</title>
-  {/if}
-</svelte:head>
+{#if isSignup}
+  <Title caption="Регистрация" />
+{:else}
+  <Title caption="Вход" />
+{/if}
 
 {#if user.isAuthenticated}
   <div class="already-registered">
@@ -278,5 +293,5 @@
     {/await}
   </form>
 {:else}
-  <form class="signin" on:submit|preventDefault={signin} />
+  <SignIn on:signed={signed} />
 {/if}

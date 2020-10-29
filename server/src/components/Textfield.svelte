@@ -1,54 +1,83 @@
 <script>
-  import {slide} from "svelte/transition";
-  import Textfield from "@smui/textfield";
+  import { slide } from "svelte/transition";
+  import { TextField } from "svelte-materialify/src";
 
-  export let value = "";
-  export let error = false;
-  export let label = "Введите текст...";
-  export let type = "text";
+  export let error = false,
+    clearable = false;
+  export let value = "",
+    type = "text";
+  export let label, placeholder;
+  export let filled, outlined, solo;
+  export let counter;
 
-  $: smuiError = error ? true : false;
+  let focused;
+
+  $: smError = error ? true : false;
 </script>
 
 <style lang="sass">
-  @import "../theme/colors"
+  @import "colors"
 
   .textfield-container
     font-size: .75rem
-    margin: .25rem .5rem
-    color: $color_error_red
+    margin: .5rem
+    color: $color-error
 
     &-error
       padding: .25rem
 
-    :global(*) 
-      font-family: defaultFont
+    :global
+      *
+        font-family: defaultFont
 
-    :global(label)
-      width: 100%
-
-      &.error :global(input)
-        color: $mdc-theme-error
-
-      &:not(.error) :global(input:focus)
-        color: $mdc-theme-primary
-
-      :global(.mdc-text-field__input)
+      input
+        color: var(--theme-text-secondary)
         transition: color .3s ease
-        color: $mdc-theme-secondary
+
+  :global
+    .textfield-container:not(.error).focused
+      .s-input
+        color: $color-green !important
+        caret-color: $color-green !important
+
+      .s-text-field__wrapper::before
+        border-color: $color-green
+
+      input
+        color: $color-green
+
+    .textfield-container.error
+      .s-input
+        color: $color-error !important
+        caret-color: $color-error !important
+
+      .s-text-field__wrapper::before
+        border-color: $color-error
+
+      input
+        color: $color-error
 </style>
 
-<div class="textfield-container">
-  <Textfield
-    class={error ? 'error' : ''}
-    variant="standard"
-    {type}
+<div
+  class="
+  textfield-container
+  {smError ? 'error' : ''}
+  {focused ? 'focused' : ''}">
+  <TextField
     bind:value
-    invalid={smuiError}
-    {label} />
-  {#if error}
-    <p class="textfield-container-error" transition:slide>
-      {error}
-    </p>
+    on:focus={() => focused = true}
+    on:blur={() => focused = false}
+    {placeholder}
+    {counter}
+    maxlength={counter}
+    {type}
+    {clearable}
+    {filled}
+    {outlined}
+    {solo}>
+    {#if label}{label}{/if}
+  </TextField>
+  {#if smError}
+    <p class="textfield-container-error" transition:slide>{error}</p>
   {/if}
 </div>

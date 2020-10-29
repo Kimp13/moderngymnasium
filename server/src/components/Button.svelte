@@ -1,52 +1,67 @@
 <script>
   import { createEventDispatcher } from "svelte";
 
-  import Button, { Icon, Label } from "@smui/button";
+  import { Button, Icon } from "svelte-materialify/src";
 
-  let className, icon, label;
-  export { className as class, icon, label };
+  let className, icon, label, outlined, depressed, fab;
+  export { className as class, icon, label, outlined, depressed, fab };
   export let disabled = false;
-  export let variant = "raised";
-  export let color = "primary";
 
   const dispatch = createEventDispatcher();
 
   const dispatchClick = (e) => dispatch("click", e);
 </script>
 
-<style lang="sass">
-  :global(.button-component)
-    :global(.button-component-icon)
-      display: inline-flex
-      justify-content: center
-      align-items: center
-      width: 1.1rem
-      height: 1.1rem
-      color: white
+<style lang="scss">
+  @import "colors";
 
-    :global(.button-component-icon.alone)
-      margin: 0
-      width: 1.25rem
-      height: 1.25rem
+  :global {
+    .button-component {
+      &.s-btn {
+        background-color: var(--button-color, $color-green);
+        color: var(--button-background-color, white);
 
-    :global(.button-component-label)
-      font-weight: 700
-      font-family: defaultFont, sans-serif
-      color: white
+        &:hover {
+          cursor: pointer;
+        }
+      }
+
+      &-icon {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 1.1rem;
+        height: 1.1rem;
+        color: black;
+
+        &.alone {
+          width: 1.25rem;
+          height: 1.25rem;
+        }
+
+        &:not(.alone) {
+          margin-right: .4rem;
+        }
+      }
+
+      &-label {
+        font-weight: 700;
+        font-family: defaultFont, sans-serif;
+        color: white;
+      }
+    }
+  }
 </style>
 
 <Button
   class="button-component {className || ''}"
   {disabled}
-  {color}
-  {variant}
+  {outlined}
+  {depressed}
+  {fab}
   on:click={dispatchClick}>
   {#if icon}
-    <Icon class="material-icons button-component-icon {label ? '' : 'alone'}">
-      {icon}
-    </Icon>
+    <Icon path={icon} class="button-component-icon {label ? '' : 'alone'}" />
   {/if}
-  {#if label}
-    <Label class="button-component-label">{label}</Label>
-  {/if}
+  {#if label}{label}{/if}
 </Button>

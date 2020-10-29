@@ -115,26 +115,12 @@ module.exports = {
     if (
       password &&
       username &&
-      password.length > 8 &&
+      password.length >= 8 &&
       !/[^0-9a-zA-Z#$*_]/.test(username)
     ) {
-      const user = await mg.knex
-        .select('*')
-        .from('user')
-        .where('username', username);
-
-      user.permissions = await mg.knex
-        .select('*')
-        .from('permissions')
-        .innerJoin(
-          'permission_role',
-          'permission_role.permission_id',
-          'permission.id'
-        )
-        .where(
-          'permission_role.role_id',
-          user.role_id
-        );
+      const user = await mg.query('user').findOne({
+        username
+      }, ['role.permission']);
 
       if (
         user &&
@@ -144,7 +130,9 @@ module.exports = {
           id: user.id
         });
 
-        user.permissions = parsePermissions(user.permissions);
+        user.permissions = parsePermissions(
+          user._relations.role._relations.permission
+        );
 
         res.statusCode = 200;
         res.end(JSON.stringify({

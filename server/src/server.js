@@ -8,7 +8,7 @@ import * as sapper from '@sapper/server';
 
 // database
 import Knex from 'knex';
-import kmm from '../knex-model-management';
+import addModels, * as db from '../database';
 
 // filesystem
 import path from 'path';
@@ -69,100 +69,101 @@ const main = () => {
         return;
       };
 
-      mg.paths = new Object();
-      mg.models = new Object();
-      mg.services = new Object();
+      mg.paths = {};
+      mg.models = {};
+      mg.services = {};
       mg.cache = {
-        usersTokens: new Object(),
-        classes: new Object()
+        usersTokens: {},
+        classes: {}
       };
 
       Promise.all(
-        // Initialize server filesystem dependencies
-        [
-          ...files.map(file => new Promise((resolve, reject) => {
-            let currentPath = path.join(modelsPath, file),
-              modelPath = path.join(currentPath, 'model.js'),
-              servicesPath = path.join(currentPath, 'services.js'),
-              routesPath = path.join(currentPath, 'routes.json'),
-              controllersPath = path.join(currentPath, 'controllers.js'),
-              routeName = getRouteName(file);
+        files.map(file => new Promise((resolve, reject) => {
+          let currentPath = path.join(modelsPath, file),
+            modelPath = path.join(currentPath, 'model.js'),
+            servicesPath = path.join(currentPath, 'services.js'),
+            routesPath = path.join(currentPath, 'routes.json'),
+            controllersPath = path.join(currentPath, 'controllers.js'),
+            routeName = getRouteName(file);
 
-            Promise.all([
-              new Promise((resolve, reject) => {
-                fs.access(modelPath, fs.F_OK, err => {
-                  if (err) {
-                    resolve();
-                    return;
-                  }
+          Promise.all([
+            new Promise((resolve, reject) => {
+              fs.access(modelPath, fs.F_OK, err => {
+                if (err) {
+                  resolve();
+                  return;
+                }
 
-                  mg.models[file] = require(modelPath);
+                mg.models[file] = require(modelPath);
 
-                  if (file.toLowerCase() === 'user') {
-                    mg
-                      .knex('user')
-                      .count('id')
-                      .then(count => {
-                        mg.cache.usersCount =
-                          count[0][Object.keys(count[0])[0]];
-
-                        resolve();
-                      });
-                  } else {
-                    resolve();
-                  }
-                });
-              }),
-              new Promise((resolve, reject) => {
-                fs.access(routesPath, fs.F_OK, err => {
-                  if (err) {
-                    resolve();
-                    return;
-                  }
-
-                  fs.access(controllersPath, fs.F_OK, err => {
-                    let routes = require(routesPath),
-                      controllers = require(controllersPath);
-
-                    for (let j = 0; j < routes.length; j += 1) {
-                      routes[j].method = routes[j].method.toUpperCase();
-
-                      if (
-                        routes[j].path.charAt(
-                          routes[j].path.length - 1
-                        ) !== '/'
-                      ) {
-                        routes[j].path += '/';
-                      }
-
-                      if (!mg.paths.hasOwnProperty(routes[j].method)) {
-                        mg.paths[routes[j].method] = new Object();
-                      }
-
-                      mg.paths[routes[j].method][`/${routeName}${routes[j].path}`] = (
-                        routes[j].handler === 'default' ?
-                          controllers :
-                          controllers[routes[j].handler]
-                      );
+                if (file.toLowerCase() === 'user') {
+                  mg
+                    .knex('user')
+                    .count('id')
+                    .then(count => {
+                      mg.cache.usersCount =
+                        count[0][Object.keys(count[0])[0]];
 
                       resolve();
-                    }
-                  });
-                });
-              }),
-              new Promise((resolve, reject) => {
-                fs.access(servicesPath, fs.F_OK, err => {
-                  if (err) {
-                    resolve();
-                    return;
-                  }
-
-                  mg.services[_.camelCase(file)] = require(servicesPath);
+                    });
+                } else {
                   resolve();
+                }
+              });
+            }),
+            new Promise((resolve, reject) => {
+              fs.access(routesPath, fs.F_OK, err => {
+                if (err) {
+                  resolve();
+                  return;
+                }
+
+                fs.access(controllersPath, fs.F_OK, err => {
+                  let routes = require(routesPath),
+                    controllers = require(controllersPath);
+
+                  for (let j = 0; j < routes.length; j += 1) {
+                    routes[j].method = routes[j].method.toUpperCase();
+
+                    if (
+                      routes[j].path.charAt(
+                        routes[j].path.length - 1
+                      ) !== '/'
+                    ) {
+                      routes[j].path += '/';
+                    }
+
+                    if (!mg.paths.hasOwnProperty(routes[j].method)) {
+                      mg.paths[routes[j].method] = new Object();
+                    }
+
+                    mg.paths[routes[j].method][`/${routeName}${routes[j].path}`] = (
+                      routes[j].handler === 'default' ?
+                        controllers :
+                        controllers[routes[j].handler]
+                    );
+
+                    resolve();
+                  }
                 });
-              })
-            ]).then(resolve);
-          })),
+              });
+            }),
+            new Promise((resolve, reject) => {
+              fs.access(servicesPath, fs.F_OK, err => {
+                if (err) {
+                  resolve();
+                  return;
+                }
+
+                mg.services[_.camelCase(file)] = require(servicesPath);
+                resolve();
+              });
+            })
+          ]).then(resolve);
+        }))
+      )
+        .then(addModels(knex, mg.models))
+        .then(() => Promise.all([
           new Promise((resolve, reject) => {
             knex
               .select('user.id', 'messaging_token.token')
@@ -206,9 +207,7 @@ const main = () => {
                 resolve();
               }, reject);
           })
-        ]
-      )
-        .then(() => kmm.init(knex, mg.models))
+        ]))
         .then(() => {
           // Initialize Firebase
           mg.firebaseAdmin.initializeApp({
@@ -220,7 +219,7 @@ const main = () => {
           });
 
           // Set Query function
-          mg.query = kmm.query;
+          mg.query = db.query;
 
           const app = express();
 
@@ -267,7 +266,6 @@ const main = () => {
 
               return;
             })
-            .use('/admin', kmm.subapp('/admin'))
             .use(compression({ threshold: 0 }))
             .use(express.static('static'))
             .use(async (req, res, next) => {

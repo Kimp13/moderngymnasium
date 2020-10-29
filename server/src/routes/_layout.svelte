@@ -1,14 +1,7 @@
-<script context="module">
-  export async function preload(page, session) {
-    if (
-      !session.user.isAuthenticated &&
-      page.path.substring(0, 5) !== "/auth"
-    ) {
-      this.redirect(307, "/auth");
-    }
+<script>
+  import { MaterialApp } from 'svelte-materialify/src';
 
-    return new Object();
-  }
+  export let segment;
 </script>
 
 <style global lang="sass">
@@ -59,6 +52,6 @@
       font-size: calc(1vw + 1vh)
 </style>
 
-<main>
+<MaterialApp>
   <slot />
-</main>
+</MaterialApp>

@@ -16,5 +16,16 @@ module.exports = {
       type: 'string',
       length: 128
     }
-  }
+  },
+
+  relations: [
+    {
+      type: 'many:many',
+      with: 'permission'
+    },
+    {
+      type: 'one:many',
+      with: 'user'
+    }
+  ]
 };

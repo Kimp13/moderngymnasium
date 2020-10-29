@@ -2,11 +2,11 @@ import resolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
-import svelte from 'rollup-plugin-svelte';
-import sveltePreprocess from 'svelte-preprocess';
-import postcss from "rollup-plugin-postcss";
 import babel from '@rollup/plugin-babel';
+import svelte from 'rollup-plugin-svelte';
+import postcss from "rollup-plugin-postcss";
 import { terser } from 'rollup-plugin-terser';
+import includePaths from 'rollup-plugin-includepaths';
 import config from 'sapper/config/rollup.js';
 import pkg from './package.json';
 
@@ -24,11 +24,7 @@ const onwarn = (warning, onwarn) =>
 /**
  * svelte-preprocess
  */
-const preprocess = sveltePreprocess({
-  sass: {
-    includePaths: ['./src/theme']
-  }
-});
+const { preprocess } = require('./svelte.config');
 
 const postcssConfig = () => ({
   extensions: [".scss", ".sass"],
@@ -48,6 +44,13 @@ const postcssConfig = () => ({
       }
     ]
   ]
+});
+
+const includePathsOptions = () => ({
+  include: {},
+  paths: ['utils', 'src/components', 'static'],
+  external: [],
+  extensions: ['.js']
 });
 
 export default {
@@ -71,7 +74,8 @@ export default {
 				browser: true,
 				dedupe: ['svelte']
 			}),
-			commonjs(),
+      commonjs(),
+      includePaths(includePathsOptions()),
       postcss(postcssConfig()),
 
 			legacy && babel({
@@ -121,6 +125,7 @@ export default {
 				dedupe: ['svelte']
 			}),
       commonjs(),
+      includePaths(includePathsOptions()),
       postcss(postcssConfig())
 		],
 		external: Object.keys(pkg.dependencies).concat(require('module').builtinModules),

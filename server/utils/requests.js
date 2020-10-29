@@ -28,12 +28,23 @@ export const getApiResponse = async (path, query, auth) => {
   return await response.json();
 };
 
-export const postApi = async (path, query) => {
-  return await fetch(path, {
+export const postApi = async (path, query, auth) => {
+  if (auth === true) {
+    auth = getCookie('jwt');
+  }
+
+  const response = await fetch(path, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Authentication': auth || ''
     },
     body: JSON.stringify(query)
   });
+
+  if (response.ok) {
+    return await response.json();
+  } else {
+    throw response;
+  }
 };

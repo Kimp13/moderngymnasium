@@ -1,12 +1,12 @@
 <script>
   import { stores } from "@sapper/app";
-  import { fly, slide } from "svelte/transition";
   import { createEventDispatcher } from "svelte";
+  import { slide } from "svelte/transition";
 
-  import Textfield from "../Textfield.svelte";
+  import Textfield from "Textfield.svelte";
   import SubmitButton from "./SubmitButton.svelte";
 
-  import { postApi } from "../../../utils/requests.js";
+  import { postApi } from "requests";
 
   export let element;
 
@@ -84,6 +84,7 @@
 
         promise.then(
           (json) => {
+            console.log(json);
             dispatch("signed", json);
           },
           (e) => {
@@ -101,14 +102,35 @@
   };
 </script>
 
-<form
-  bind:this={element}
-  class="signin"
-  on:submit|preventDefault={signin}
-  transition:fly={{ x: -300, duration: 300 }}>
+<style lang="scss">
+  @import "colors";
+
+  .signin {
+    padding: 3rem 1rem;
+    text-align: right;
+
+    .await {
+      font-weight: 700;
+      color: $color-green;
+    }
+
+    .error {
+      font-size: .75rem;
+      text-align: center;
+      color: $color-error;
+    }
+  }
+</style>
+
+<form bind:this={element} class="signin">
   <div class="fields">
-    <Textfield bind:value={username} error={usernameError} label="Логин" />
     <Textfield
+      counter={32}
+      bind:value={username}
+      error={usernameError}
+      label="Логин" />
+    <Textfield
+      counter={128}
       type="password"
       bind:value={password}
       error={passwordError}
@@ -121,14 +143,14 @@
       <p class="await">Перенаправляем...</p>
     {:catch e}
       <p class="error">
-        К сожалению, произошла какая-то&nbsp; ошибка. Пожалуйста, попробуйте
-        снова через&nbsp; пару минут или обратитесь к администратору.
+        К сожалению, произошла какая-то ошибка. Пожалуйста, попробуйте снова
+        через пару минут или обратитесь к администратору.
       </p>
     {/await}
   {:else if wrongPassword}
-    <p class="error">Неправильный логин или пароль.</p>
-    <SubmitButton disabled />
+    <p class="error" transition:slide>Неправильный логин или пароль.</p>
+    <SubmitButton on:click={signin} disabled label="Войти" />
   {:else}
-    <SubmitButton {disabled} />
+    <SubmitButton on:click={signin} {disabled} label="Войти" />
   {/if}
 </form>

@@ -3,9 +3,9 @@
   let title;
 
   if (caption) {
-    title = `${caption} • undefined`;
+    title = `${caption} • Гимназия в лучах славы`;
   } else {
-    title = 'undefined';
+    title = 'Гимназия в лучах славы';
   }
 </script>
 
