@@ -1,16 +1,14 @@
-package ru.labore.moderngymnasium.ui.activities
+package ru.labore.moderngymnasium.ui.create
 
 import android.animation.Animator
 import android.content.Intent
 import android.os.Bundle
-import android.view.Gravity
-import android.view.View
-import android.view.ViewAnimationUtils
-import android.view.ViewTreeObserver
+import android.view.*
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.TextView
 import android.widget.Toast
-import kotlinx.android.synthetic.main.activity_announcement_create.*
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.create_fragment.*
 import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import org.kodein.di.DIAware
@@ -19,7 +17,9 @@ import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.network.ClientConnectionException
 import ru.labore.moderngymnasium.data.network.ClientErrorException
 import ru.labore.moderngymnasium.data.repository.AppRepository
-import ru.labore.moderngymnasium.ui.base.ScopedActivity
+import ru.labore.moderngymnasium.ui.activities.LoginActivity
+import ru.labore.moderngymnasium.ui.activities.MainActivity
+import ru.labore.moderngymnasium.ui.base.ScopedFragment
 import ru.labore.moderngymnasium.ui.views.LabelledCheckbox
 import ru.labore.moderngymnasium.ui.views.ParentCheckbox
 import ru.labore.moderngymnasium.utils.hideKeyboard
@@ -28,88 +28,53 @@ import java.util.*
 import kotlin.math.hypot
 
 
-class AnnouncementCreateActivity : ScopedActivity(), DIAware {
-    override val di: DI by lazy { (applicationContext as DIAware).di }
+class CreateFragment : ScopedFragment(), DIAware {
+    override val di: DI by lazy { (requireContext() as DIAware).di }
     private val checkedRoles: HashMap<Int, MutableList<Int>> = hashMapOf()
     private val repository: AppRepository by instance()
     private var announcementText: String? = null
+    private var UILoaded = false
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        overridePendingTransition(0, 0)
-        setContentView(R.layout.activity_announcement_create)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.create_fragment, container, false)
+    }
 
-        if (savedInstanceState == null) {
-            activityCreateLayout.visibility = View.INVISIBLE
-            val viewTreeObserver: ViewTreeObserver = activityCreateLayout.viewTreeObserver
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
 
-            if (viewTreeObserver.isAlive) {
-                viewTreeObserver.addOnGlobalLayoutListener(object : OnGlobalLayoutListener {
-                    override fun onGlobalLayout() {
-                        circularRevealActivity()
-
-                        activityCreateLayout
-                            .viewTreeObserver
-                            .removeOnGlobalLayoutListener(this)
-                    }
-                })
-            }
-        }
-
-        loadUI()
-
-        activityCreateLayout.setOnClickListener { hideKeyboard() }
+        createFragmentLayout.setOnClickListener { hideKeyboard() }
         createAnnouncementRoleChoose.setOnClickListener { hideKeyboard() }
         createAnnouncementButton.setOnClickListener { createAnnouncement() }
     }
 
-    private fun circularRevealActivity(directionForwards: Boolean = true) {
-        val cx: Int = intent.extras?.getInt("x") ?: 0
-        val cy: Int = intent.extras?.getInt("y") ?: 0
-        val firstRadius: Float = intent.extras?.getFloat("radius") ?: 0F
+    fun reveal (x: Int, y: Int, radius: Float) {
+        val activity = requireActivity() as MainActivity
         val secondRadius = hypot(
-            activityCreateLayout.width.toDouble(),
-            activityCreateLayout.height.toDouble()
+            activity.rootMainLayout.width.toDouble(),
+            activity.rootMainLayout.height.toDouble()
         ).toFloat()
-        val circularReveal: Animator
 
-        if (directionForwards) {
-            circularReveal = ViewAnimationUtils.createCircularReveal(
-                activityCreateLayout,
-                cx,
-                cy,
-                firstRadius,
-                secondRadius
-            )
+        val circularReveal: Animator = ViewAnimationUtils.createCircularReveal(
+            createFragmentLayout,
+            x,
+            y,
+            radius,
+            secondRadius
+        )
 
-            activityCreateLayout.visibility = View.VISIBLE
-        } else {
-            circularReveal = ViewAnimationUtils.createCircularReveal(
-                activityCreateLayout,
-                cx,
-                cy,
-                secondRadius,
-                0F
-            )
+        activity.createFragment.visibility = View.VISIBLE
 
-            circularReveal.addListener(object : Animator.AnimatorListener {
-                override fun onAnimationStart(animation: Animator?) {
-                }
-
-                override fun onAnimationEnd(animation: Animator?) {
-                    finish()
-                }
-
-                override fun onAnimationCancel(animation: Animator?) {
-                }
-
-                override fun onAnimationRepeat(animation: Animator?) {
-                }
-
-            })
-        }
         circularReveal.duration = 600
         circularReveal.start()
+
+        if (!UILoaded) {
+            loadUI()
+            UILoaded = true
+        }
     }
 
     private fun childCheckedChangeHandler(isChecked: Boolean, roleId: Int, classId: Int) {
@@ -141,11 +106,12 @@ class AnnouncementCreateActivity : ScopedActivity(), DIAware {
     private fun loadUI() = launch {
         val roles = repository.getUserRoles().filterNotNull()
         val classes = repository.getUserClasses()
+        val activity = requireActivity()
 
         if (announcementText != null) {
             createAnnouncementEditText.setText(announcementText)
         }
-
+        println("Hello, World!")
         roles.forEach { role ->
             val checkboxLayout: View
 
@@ -158,7 +124,7 @@ class AnnouncementCreateActivity : ScopedActivity(), DIAware {
                 ) {
                     if (classes[firstGrade]?.size == 1) {
                         checkboxLayout = LabelledCheckbox(
-                            this@AnnouncementCreateActivity,
+                            activity,
                             "${
                                 when (Locale.getDefault().language) {
                                     "ru" -> role.nameRu
@@ -178,7 +144,7 @@ class AnnouncementCreateActivity : ScopedActivity(), DIAware {
                         createAnnouncementRoleChoose.addView(checkboxLayout)
                     } else {
                         checkboxLayout = ParentCheckbox(
-                            this@AnnouncementCreateActivity,
+                            activity,
                             "${
                                 when (Locale.getDefault().language) {
                                     "ru" -> role.nameRu
@@ -189,7 +155,7 @@ class AnnouncementCreateActivity : ScopedActivity(), DIAware {
 
                         classes[firstGrade]!!.forEach { classEntity ->
                             val nestedCheckbox = LabelledCheckbox(
-                                this@AnnouncementCreateActivity,
+                                activity,
                                 classEntity.letter
                             )
 
@@ -203,7 +169,7 @@ class AnnouncementCreateActivity : ScopedActivity(), DIAware {
                 }
             } else if (classes.size > 1) {
                 checkboxLayout = ParentCheckbox(
-                    this@AnnouncementCreateActivity,
+                    activity,
                     when (Locale.getDefault().language) {
                         "ru" -> role.nameRu
                         else -> role.name
@@ -219,18 +185,18 @@ class AnnouncementCreateActivity : ScopedActivity(), DIAware {
 
                         if (classes[it]!!.size == 1) {
                             childCheckbox = LabelledCheckbox(
-                                this@AnnouncementCreateActivity,
+                                activity,
                                 "${classes[it]!![0].grade}${classes[it]!![0].letter}"
                             )
                         } else {
                             childCheckbox = ParentCheckbox(
-                                this@AnnouncementCreateActivity,
+                                activity,
                                 "${classes[it]!![0].grade}"
                             )
 
                             classes[it]!!.forEach { classEntity ->
                                 val nestedCheckbox = LabelledCheckbox(
-                                    this@AnnouncementCreateActivity,
+                                    activity,
                                     classEntity.letter
                                 )
 
@@ -247,7 +213,7 @@ class AnnouncementCreateActivity : ScopedActivity(), DIAware {
                     }
                 }
             } else {
-                val textView = TextView(this@AnnouncementCreateActivity)
+                val textView = TextView(activity)
                 textView.text = getString(R.string.no_rights_to_announce)
                 textView.gravity = Gravity.CENTER_HORIZONTAL
 
@@ -257,9 +223,11 @@ class AnnouncementCreateActivity : ScopedActivity(), DIAware {
     }
 
     private fun createAnnouncement() {
+        val activity = requireActivity()
+
         if (checkedRoles.keys.size == 0) {
             Toast.makeText(
-                this,
+                activity,
                 getString(R.string.choose_recipient_role),
                 Toast.LENGTH_SHORT
             ).show()
@@ -271,7 +239,7 @@ class AnnouncementCreateActivity : ScopedActivity(), DIAware {
 
             if (text.isEmpty()) {
                 Toast.makeText(
-                    this,
+                    activity,
                     getString(R.string.enter_announcement_text),
                     Toast.LENGTH_SHORT
                 ).show()
@@ -280,7 +248,7 @@ class AnnouncementCreateActivity : ScopedActivity(), DIAware {
                     repository.createAnnouncement(text, checkedRoles)
                 } catch (e: Exception) {
                     Toast.makeText(
-                        this@AnnouncementCreateActivity,
+                        activity,
                         when (e) {
                             is ConnectException -> getString(R.string.server_unavailable)
                             is ClientConnectionException -> getString(R.string.no_internet)
@@ -289,11 +257,11 @@ class AnnouncementCreateActivity : ScopedActivity(), DIAware {
                                     repository.user = null
                                     startActivity(
                                         Intent(
-                                            this@AnnouncementCreateActivity,
+                                            activity,
                                             LoginActivity::class.java
                                         )
                                     )
-                                    finish()
+//                                    finish()
                                 }
 
                                 getString(R.string.invalid_credentials)
@@ -305,14 +273,5 @@ class AnnouncementCreateActivity : ScopedActivity(), DIAware {
                 }
             }
         }
-    }
-
-    override fun onBackPressed() {
-        circularRevealActivity(false)
-    }
-
-    override fun finish() {
-        super.finish()
-        overridePendingTransition(0, 0)
     }
 }

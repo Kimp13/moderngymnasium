@@ -2,15 +2,16 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/activityCreateLayout"
+    android:id="@+id/createFragmentLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorDarkVariant"
     android:padding="20dp"
-    tools:context=".ui.activities.AnnouncementCreateActivity">
+    tools:context=".ui.create.CreateFragment">
 
     <EditText
         android:id="@+id/createAnnouncementEditText"
+        style="@style/AppEditTextStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/hint_create_announcement"
@@ -21,7 +22,7 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="spread_inside"/>
+        app:layout_constraintVertical_chainStyle="spread_inside" />
 
     <ScrollView
         android:id="@+id/createAnnouncementRoleChoose"
@@ -37,6 +38,7 @@
 
     <Button
         android:id="@+id/createAnnouncementButton"
+        style="@style/AppButtonStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/create_announcement_label"

@@ -3,7 +3,8 @@ package ru.labore.moderngymnasium.ui.activities
 import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentContainerView
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.LabelVisibilityMode
@@ -14,8 +15,9 @@ import org.kodein.di.instance
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.repository.AppRepository
 import ru.labore.moderngymnasium.ui.adapters.MainFragmentPagerAdapter
+import ru.labore.moderngymnasium.ui.create.CreateFragment
 
-class MainActivity : AppCompatActivity(), DIAware {
+class MainActivity : FragmentActivity(), DIAware {
     override val di: DI by lazy { (applicationContext as DIAware).di }
 
     private lateinit var viewPagerAdapter: MainFragmentPagerAdapter
@@ -30,7 +32,7 @@ class MainActivity : AppCompatActivity(), DIAware {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
         } else {
-            setSupportActionBar(toolbar)
+            setActionBar(toolbar)
 
             viewPagerAdapter = MainFragmentPagerAdapter(supportFragmentManager, lifecycle)
             navHostFragment.adapter = viewPagerAdapter
@@ -62,6 +64,13 @@ class MainActivity : AppCompatActivity(), DIAware {
             isVisible = newNumber > 0
             number = newNumber
         }
+    }
+
+    fun revealCreateFragment(x: Int, y: Int, radius: Float) {
+        val fragment = supportFragmentManager.findFragmentByTag("create_fragment")
+            as CreateFragment
+
+        fragment.reveal(x, y, radius)
     }
 
     private fun loadFragment(menuItem: MenuItem): Boolean {

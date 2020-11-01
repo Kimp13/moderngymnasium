@@ -501,25 +501,29 @@ class AppRepository(
     }
 
     private suspend fun getRoles(rolesIds: Array<Int>): Array<RoleEntity?> {
-        val result: Array<RoleEntity?> = arrayOfNulls(rolesIds.size)
+        return if (rolesIds[0] == -1) {
+            appNetwork.fetchAllRoles()
+        } else {
+            val result: Array<RoleEntity?> = arrayOfNulls(rolesIds.size)
 
-        List(rolesIds.size) {
-            GlobalScope.launch {
-                var role = roleEntityDao.getRole(rolesIds[it])
+            List(rolesIds.size) {
+                GlobalScope.launch {
+                    var role = roleEntityDao.getRole(rolesIds[it])
 
-                if (role == null) {
-                    role = appNetwork.fetchRole(rolesIds[it])
+                    if (role == null) {
+                        role = appNetwork.fetchRole(rolesIds[it])
 
-                    if (role != null) {
-                        persistFetchedRole(role)
+                        if (role != null) {
+                            persistFetchedRole(role)
+                        }
                     }
+
+                    result[it] = role
                 }
+            }.joinAll()
 
-                result[it] = role
-            }
-        }.joinAll()
-
-        return result
+            result
+        }
     }
 
     private suspend fun persistFetchedAnnouncement(

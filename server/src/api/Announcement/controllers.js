@@ -21,12 +21,17 @@ module.exports = {
     }
 
     if (user) {
-      user = (await mg.knex('user').where({
+      user = await mg.query('user').findOne({
         id: user.id
-      }))[0];
+      }, ['role.permission']);
 
       if (user) {
-        const announcements = await mg.knex('announcement')
+        const roleIds = getPermission(
+          user._relations.role._relations.permission,
+          ['announcement', 'read']
+        );
+
+        let announcements = mg.knex('announcement')
           .innerJoin(
             'announcement_class_role',
             'announcement_class_role.announcement_id',
@@ -35,15 +40,22 @@ module.exports = {
           .where(
             'announcement_class_role.class_id',
             user.class_id
-          )
-          .andWhere(
+          );
+
+        if (Array.isArray(roleIds)) {
+          announcements = announcements.andWhereIn(
             'announcement_class_role.role_id',
-            user.role_id
-          )
+            roleIds.map(id => parseInt(id, 10))
+          );
+        } else if (roleIds === false) {
+          res.statusCode = 200;
+          res.end('[]');
+        }
+
+        announcements = await announcements
           .orderBy('id', 'desc')
           .offset(offset)
           .limit(limit);
-
         res.statusCode = 200;
         res.end(JSON.stringify(announcements));
         return;
@@ -63,9 +75,9 @@ module.exports = {
     let user = await getUser(req.headers.authentication);
 
     if (user) {
-      user = (await mg.knex('user').where({
+      user = await mg.query('user').findOne({
         id: user.id
-      }))[0];
+      });
 
       if (user) {
         const count = (await mg.knex('announcement')
@@ -90,13 +102,9 @@ module.exports = {
         }));
         return;
       }
-
-      res.statusCode = 401;
-      res.end('{}');
-      return;
     }
 
-    res.statusCode = 400;
+    res.statusCode = 401;
     res.end('{}');
     return;
   },
@@ -141,11 +149,8 @@ module.exports = {
             tim.sort(createPermission, compFunction);
             tim.sort(permittedClasses, compFunction);
 
-            console.log(createPermission, permittedClasses);
-
             for (let i = 0; i < roleIds.length; i += 1) {
-              const numberRoleId = Number(roleIds[i]);
-              if (binarySearch(createPermission, numberRoleId, compFunction) >= 0) {
+              if (binarySearch(createPermission, roleIds[i], compFunction) >= 0) {
                 for (const classId of req.body.recipients[roleIds[i]]) {
                   if (binarySearch(permittedClasses, classId, compFunction) < 0) {
                     throwErr();

@@ -312,6 +312,36 @@ interface FetchRole {
     }
 }
 
+interface FetchAllRoles {
+    @GET("roles/all")
+    suspend fun fetch(): Array<RoleEntity?>
+
+    companion object {
+        suspend operator fun invoke(
+            context: Context,
+            requestInterceptor: Interceptor
+        ): Array<RoleEntity?> {
+            val okHttpClient = OkHttpClient
+                .Builder()
+                .addInterceptor(requestInterceptor)
+                .build()
+
+            return Retrofit
+                .Builder()
+                .client(okHttpClient)
+                .baseUrl(
+                    context
+                        .resources
+                        .getString(R.string.api_url)
+                )
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(FetchAllRoles::class.java)
+                .fetch()
+        }
+    }
+}
+
 interface FetchClass {
     @GET("class")
     suspend fun fetch(@Query("id") id: Int): ClassEntity?

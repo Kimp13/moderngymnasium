@@ -220,6 +220,7 @@ const main = () => {
 
           // Set Query function
           mg.query = db.query;
+          mg.queryAll = db.queryAll;
 
           const app = express();
 
@@ -271,17 +272,17 @@ const main = () => {
             .use(async (req, res, next) => {
               req.cookies = cookie.parse(req.headers.cookie || '');
 
-              const user = await getUser(req.cookies.jwt);
+              req.user = await getUser(req.cookies.jwt);
 
               sapper.middleware({
                 session: () => {
                   return {
                     apiUrl: API_URL,
                     user: (
-                      user ?
+                      req.user ?
                         Object.assign({
                           isAuthenticated: true
-                        }, _.pick(user, [
+                        }, _.pick(req.user, [
                           'first_name',
                           'last_name',
                           'username',

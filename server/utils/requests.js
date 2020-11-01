@@ -1,6 +1,8 @@
-export const getApiResponse = async (path, query, auth) => {
+import { getCookie } from "./cookies";
+
+const createUrl = (path, query, auth) => {
   let keys,
-      queryString = '';
+    queryString = '';
 
   if (query) {
     keys = Object.keys(query);
@@ -16,16 +18,40 @@ export const getApiResponse = async (path, query, auth) => {
     queryString += `&${keys[i]}=${query[keys[i]]}`;
   }
 
-  let url = encodeURI(path + queryString);
+  return encodeURI(path + queryString);
+};
 
-  let response = await fetch(url, {
+export const getApiResponse = async (path, query, auth) => {
+  if (auth === true) {
+    auth = getCookie('jwt');
+  }
+
+  const url = createUrl(path, query, auth);
+  const response = await fetch(url, {
     method: 'GET',
     headers: {
       'Custom-Authorization': auth || ''
     }
-  });
+  }); 
 
-  return await response.json();
+  if (response.ok) {
+    return await response.json();
+  } else {
+    throw response;
+  }
+};
+
+export const getPreloadApiResponse = async (path, query, sapperInstance) => {
+  const url = createUrl(path, query);
+  const response = await (
+    await sapperInstance.fetch(url, {
+      credentials: 'include'
+    })
+  ).json()
+
+  return response.hasOwnProperty('response') ?
+    response.response :
+    response;
 };
 
 export const postApi = async (path, query, auth) => {

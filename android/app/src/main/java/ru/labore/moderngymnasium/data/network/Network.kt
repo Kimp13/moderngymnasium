@@ -85,6 +85,8 @@ class AppNetwork(context: Context) : Interceptor {
         id
     )
 
+    suspend fun fetchAllRoles() = FetchAllRoles(appContext, this)
+
     suspend fun fetchClass(
         id: Int
     ) = FetchClass(

@@ -1,22 +1,21 @@
 'use strict';
 
-import fs from 'fs';
-import path from 'path';
 import set from 'lodash/set';
 import get from 'lodash/get';
-import defaults from 'lodash/defaults';
-
-const readdirAsync = path => new Promise((resolve, reject) => {
-  fs.readdir(path, (err, files) => {
-    if (err) {
-      reject(err);
-    } else {
-      resolve(files);
-    }
-  });
-});
 
 const _models = {};
+
+export const query = (name, origin = 'unspecified') => {
+  return get(_models, [origin, name], null);
+};
+
+export const queryAll = origin => {
+  if (origin) {
+    return _models[origin];
+  }
+
+  return _models;
+}
 
 export const parseArgs = (query, args = {}, property = 'where') => {
   let result = query;
@@ -110,69 +109,71 @@ export class KnexManageModel {
         related.substring(dotIndex + 1)
     );
 
-    for (const relation of model.specs.relations) {
-      if (
-        relation.with[0] === relatedModelName &&
-        relation.with[1] === model.specs.origin
-      ) {
-        const type = relation.type.split(':');
-        const relatedModel = query(...relation.with);
+    if (model.specs.relations) {
+      for (const relation of model.specs.relations) {
+        if (
+          relation.with[0] === relatedModelName &&
+          relation.with[1] === model.specs.origin
+        ) {
+          const type = relation.type.split(':');
+          const relatedModel = query(...relation.with);
 
-        if (type[1] === 'many') {
-          let relatedEntities;
+          if (type[1] === 'many') {
+            let relatedEntities;
 
-          if (type[0] === 'many') {
-            relatedEntities = await this.knex
-              .select(`${relatedModel.specs.tableName}.*`)
-              .from(relatedModel.specs.tableName)
-              .innerJoin(
-                relation.junctionTableName,
-                relation.junctionTableName + '.' +
-                relation.junctionToColumn,
-                relatedModel.specs.tableName + '.id'
-              )
-              .where(
-                relation.junctionTableName + '.' +
-                relation.junctionFromColumn,
-                entity.id
+            if (type[0] === 'many') {
+              relatedEntities = await this.knex
+                .select(`${relatedModel.specs.tableName}.*`)
+                .from(relatedModel.specs.tableName)
+                .innerJoin(
+                  relation.junctionTableName,
+                  relation.junctionTableName + '.' +
+                  relation.junctionToColumn,
+                  relatedModel.specs.tableName + '.id'
+                )
+                .where(
+                  relation.junctionTableName + '.' +
+                  relation.junctionFromColumn,
+                  entity.id
+                );
+            } else {
+              relatedEntities = await relatedModel.find({
+                id: entity[`${relatedModel.specs.tableName}_id`]
+              });
+            }
+
+            set(
+              entity,
+              ['_relations', relatedModelName],
+              relatedEntities
+            );
+
+            if (next) {
+              await Promise.all(
+                relatedEntities.map(relatedEntity => this._findRelated(
+                  relatedEntity,
+                  next,
+                  relatedModel
+                ))
               );
+            }
           } else {
-            relatedEntities = await relatedModel.find({
+            const relatedEntity = await relatedModel.findOne({
               id: entity[`${relatedModel.specs.tableName}_id`]
             });
-          }
 
-          set(
-            entity,
-            ['_relations', relatedModelName],
-            relatedEntities
-          );
-
-          if (next) {
-            await Promise.all(
-              relatedEntities.map(relatedEntity => this._findRelated(
-                relatedEntity,
-                next,
-                relatedModel
-              ))
+            set(
+              entity,
+              ['_relations', relatedModelName],
+              relatedEntity
             );
+            if (next) {
+              await this._findRelated(relatedEntity, next, relatedModel);
+            }
           }
-        } else {
-          const relatedEntity = await relatedModel.findOne({
-            id: entity[`${relatedModel.specs.tableName}_id`]
-          });
 
-          set(
-            entity,
-            ['_relations', relatedModelName],
-            relatedEntity
-          );
-          if (next) {
-            await this._findRelated(relatedEntity, next, relatedModel);
-          }
+          break;
         }
-
-        break;
       }
     }
   }
@@ -247,6 +248,12 @@ export class KnexManageModel {
   update(where = {}, set = {}) {
     return parseArgs(this.knex(this.specs.tableName), where)
       .update(set);
+  }
+
+  create(value = {}) {
+    return this.knex
+      .insert(value)
+      .into(this.specs.tableName);
   }
 };
 
@@ -342,9 +349,7 @@ export const relationColumn = async (trx, relation) => {
   }
 };
 
-export const query = (name, origin = 'unspecified') => {
-  return get(_models, [origin, name], null);
-};
+
 
 export const addModel = (key, model) => _models[key] = model;
 

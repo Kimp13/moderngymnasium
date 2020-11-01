@@ -48,4 +48,5 @@
     <string name="no_author">Нет автора</string>
     <string name="announcement_detailed_activity_action_bar_title">Объявление</string>
     <string name="expand_text">Читать далее...</string>
+    <string name="session_timed_out">Ваша сессия истекла. Пожалуйста, войдите снова.</string>
 </resources>

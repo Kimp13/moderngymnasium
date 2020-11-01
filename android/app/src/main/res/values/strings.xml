@@ -20,6 +20,9 @@
     <string name="app_name">&app_name;</string>
 
     <!-- Network-related strings -->
+    <string name="session_timed_out">
+        Your session has timed out. Please, sign in again.
+    </string>
     <string name="server_unavailable">
         Our server is unavailable. Please, retry after a few minutes
     </string>

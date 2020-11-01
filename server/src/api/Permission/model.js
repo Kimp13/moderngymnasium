@@ -12,8 +12,9 @@ module.exports = {
       length: 48
     },
 
-    role_id: {
-      type: 'integer'
+    target: {
+      type: 'string',
+      length: 128
     }
   },
 

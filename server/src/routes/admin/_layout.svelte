@@ -22,6 +22,10 @@
   let drawerActive = false;
 
   const toggleDrawer = () => (drawerActive = !drawerActive);
+
+  const closeNavigationDrawer = () => {
+    drawerActive = false;
+  };
 </script>
 
 <style lang="scss">
@@ -45,6 +49,8 @@
 
 <slot />
 <NavigationDrawer absolute active={drawerActive}>
-  кантент падъехал
+  <a on:click={closeNavigationDrawer} href="/admin/">Главная</a>
+  <a on:click={closeNavigationDrawer} href="/admin/home">Дом админа</a>
+  <a on:click={closeNavigationDrawer} href="/admin/hello">Hello админа</a>
 </NavigationDrawer>
 <Overlay active={drawerActive} absolute on:click={toggleDrawer} index={1} />
