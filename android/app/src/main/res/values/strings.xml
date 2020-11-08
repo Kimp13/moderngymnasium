@@ -46,6 +46,7 @@
     <string name="no_rights_to_announce">No required rights to announce.</string>
     <string name="hint_create_announcement">Enter text…</string>
     <string name="create_announcement_label">Announce</string>
+    <string name="create_announcement_new">New announcement</string>
     <string name="enter_announcement_text">Enter announcement text</string>
     <string name="choose_recipient_role">Choose at least one recipient</string>
 

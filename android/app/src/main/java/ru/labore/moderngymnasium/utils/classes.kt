@@ -33,8 +33,6 @@ class JsonPermissionsSerializerImpl : JsonSerializer<AllPermissions> {
         typeOfSrc: Type?,
         context: JsonSerializationContext?
     ): JsonElement {
-        val gson = Gson()
-
         return if (src == null) {
             JsonPrimitive(false)
         } else {

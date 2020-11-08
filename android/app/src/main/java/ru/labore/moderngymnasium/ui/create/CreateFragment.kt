@@ -46,9 +46,49 @@ class CreateFragment : ScopedFragment(), DIAware {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
+
         createFragmentLayout.setOnClickListener { hideKeyboard() }
         createAnnouncementRoleChoose.setOnClickListener { hideKeyboard() }
-        createAnnouncementButton.setOnClickListener { createAnnouncement() }
+        createAnnouncementSubmitButton.setOnClickListener { createAnnouncement() }
+        createAnnouncementBackButton.setOnClickListener {
+            val location = IntArray(2)
+            val activity = requireActivity() as MainActivity
+            val radius = hypot(
+                activity.rootMainLayout.width.toDouble(),
+                activity.rootMainLayout.height.toDouble()
+            ).toFloat()
+
+            it.getLocationInWindow(location)
+
+            val circularReveal = ViewAnimationUtils.createCircularReveal(
+                createFragmentLayout,
+                location[0] + it.width / 2,
+                location[1] - it.height / 2,
+                radius,
+                0F
+            )
+
+            circularReveal.addListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(animation: Animator?) {
+                }
+
+                override fun onAnimationEnd(animation: Animator?) {
+                    activity.createFragment.visibility = View.GONE
+                    circularReveal.removeAllListeners()
+                }
+
+                override fun onAnimationCancel(animation: Animator?) {
+                    circularReveal.removeAllListeners()
+                }
+
+                override fun onAnimationRepeat(animation: Animator?) {
+                }
+
+            })
+
+            circularReveal.duration = 600
+            circularReveal.start()
+        }
     }
 
     fun reveal (x: Int, y: Int, radius: Float) {
@@ -245,7 +285,12 @@ class CreateFragment : ScopedFragment(), DIAware {
                 ).show()
             } else launch {
                 try {
+                    createAnnouncementSubmitButton.visibility = View.GONE
+                    createAnnouncementSubmitProgress.visibility = View.VISIBLE
+
                     repository.createAnnouncement(text, checkedRoles)
+
+                    createAnnouncementEditText.setText("")
                 } catch (e: Exception) {
                     Toast.makeText(
                         activity,
@@ -261,7 +306,7 @@ class CreateFragment : ScopedFragment(), DIAware {
                                             LoginActivity::class.java
                                         )
                                     )
-//                                    finish()
+                                    activity.finish()
                                 }
 
                                 getString(R.string.invalid_credentials)
@@ -271,6 +316,9 @@ class CreateFragment : ScopedFragment(), DIAware {
                         Toast.LENGTH_LONG
                     ).show()
                 }
+
+                createAnnouncementSubmitButton.visibility = View.VISIBLE
+                createAnnouncementSubmitProgress.visibility = View.GONE
             }
         }
     }

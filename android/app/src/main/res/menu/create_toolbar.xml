@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/menuInboxFragment"
-        android:icon="@drawable/ic_baseline_inbox"
-        android:title="@string/menu_inbox" />
-    <item
-        android:id="@+id/menuProfileFragment"
-        android:icon="@drawable/ic_baseline_person_pin"
-        android:title="@string/menu_profile" />
+        android:id="@+id/createAnnouncementActionSubmit"
+        android:icon="@drawable/ic_baseline_check"
+        android:title="@string/create_announcement_label"
+        app:showAsAction="ifRoom" />
 </menu>

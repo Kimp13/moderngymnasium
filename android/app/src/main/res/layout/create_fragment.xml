@@ -6,22 +6,56 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorDarkVariant"
-    android:padding="20dp"
     tools:context=".ui.create.CreateFragment">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/createAnnouncementToolbar"
-        style="@style/AppToolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+    <Button
+        android:id="@+id/createAnnouncementBackButton"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/close_button_background"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/createAnnouncementTopLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:text="@string/create_announcement_new"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/createAnnouncementBackButton"
+        app:layout_constraintTop_toTopOf="@id/createAnnouncementBackButton"
+        app:layout_constraintBottom_toBottomOf="@id/createAnnouncementBackButton"/>
+
+    <Button
+        android:id="@+id/createAnnouncementSubmitButton"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/submit_button_background"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/createAnnouncementBackButton" />
+
+    <ProgressBar
+        android:id="@+id/createAnnouncementSubmitProgress"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginEnd="20dp"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="@id/createAnnouncementSubmitButton"
+        app:layout_constraintTop_toTopOf="@id/createAnnouncementSubmitButton" />
 
     <EditText
         android:id="@+id/createAnnouncementEditText"
         style="@style/AppEditTextStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
         android:hint="@string/hint_create_announcement"
         android:importantForAutofill="no"
         android:inputType="textMultiLine"
@@ -29,15 +63,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/createAnnouncementToolbar"
-        app:layout_constraintVertical_chainStyle="spread_inside" />
+        app:layout_constraintTop_toBottomOf="@id/createAnnouncementBackButton"
+        app:layout_constraintVertical_chainStyle="spread" />
 
     <ScrollView
         android:id="@+id/createAnnouncementRoleScrollView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintBottom_toTopOf="@+id/createAnnouncementButton"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
@@ -49,17 +85,5 @@
             android:layout_height="wrap_content"
             android:orientation="vertical" />
     </ScrollView>
-
-    <Button
-        android:id="@+id/createAnnouncementButton"
-        style="@style/AppButtonStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/create_announcement_label"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/createAnnouncementRoleScrollView" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
