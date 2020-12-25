@@ -29,7 +29,7 @@ class KnexManageModel {
 
     if (model.specs.hasOwnProperty('relations')) {
       const relation = model.specs.relations[
-        relatedModelName + ',' + model.specs.origin
+        `${relatedModelName},${model.specs.origin}`
       ];
 
       if (relation) {
@@ -104,14 +104,16 @@ class KnexManageModel {
           const relatedEntity = await relatedModel
             .findOne(searchObject);
 
-          set(
-            entity,
-            ['_relations', relatedModelName],
-            relatedEntity
-          );
+          if (relatedEntity) {
+            set(
+              entity,
+              ['_relations', relatedModelName],
+              relatedEntity
+            );
 
-          if (next) {
-            await this._findRelated(relatedEntity, next, relatedModel);
+            if (next) {
+              await this._findRelated(relatedEntity, next, relatedModel);
+            }
           }
         }
       }
@@ -134,6 +136,28 @@ class KnexManageModel {
   }
 
   parseArgs(query, args = {}, property = 'where') {
+    const [orderColumn, orderType] = (
+      args.hasOwnProperty('_sort') ?
+        args._sort.split(':') :
+        [false]
+    );
+
+    const limit = (
+      args.hasOwnProperty('_limit') ?
+        args._limit :
+        100
+    );
+
+    const offset = (
+      args.hasOwnProperty('_skip') ?
+        args._skip :
+        0
+    );
+
+    delete args._sort;
+    delete args._limit;
+    delete args._skip;
+
     let result = query;
     const keys = Object.keys(args);
 
@@ -203,45 +227,23 @@ class KnexManageModel {
       }
     }
 
+    if (orderColumn !== false) {
+      result = result.orderBy(orderColumn, orderType);
+    }
+
+    result = result.limit(limit);
+    result = result.offset(offset);
+
     return result;
   };
 
   _findBase(args = {}, related = []) {
-    const [orderColumn, orderType] = (
-      args.hasOwnProperty('_sort') ?
-        args._sort.split(':') :
-        [false]
-    );
-
-    const limit = (
-      args.hasOwnProperty('_limit') ?
-        args._limit :
-        100
-    );
-
-    const offset = (
-      args.hasOwnProperty('_skip') ?
-        args._skip :
-        0
-    );
-
-    delete args._sort;
-    delete args._limit;
-    delete args._skip;
-
     let query = this.parseArgs(
       this.knex
         .select('*')
         .from(this.specs.tableName),
       args
     );
-
-    if (orderColumn !== false) {
-      query = query.orderBy(orderColumn, orderType);
-    }
-
-    query = query.limit(limit);
-    query = query.offset(offset);
 
     if (related.length > 0) {
       query = query.then(result => new Promise((resolve, reject) => {
@@ -295,9 +297,11 @@ class KnexManageModel {
     }
 
     return (
-      this.prepareArgs(args)
-        .then(args => this.parseArgs(this.knex(this.specs.tableName), where))
-        .update(set)
+      this.prepareArgs(where)
+        .then(args => this.parseArgs(
+          this.knex(this.specs.tableName).update(set),
+          args
+        ))
         .then(result => result)
     );
   }
@@ -317,6 +321,28 @@ class KnexManageModel {
         .then(args => this.knex(this.specs.tableName).insert(value))
     );
   }
+
+  count(args = {}, column = '*') {
+    return (
+      this.prepareArgs(args)
+        .then(args => this.parseArgs(
+          this.knex.count(column).from(this.specs.tableName),
+          args
+        ))
+        .then(a => a[0][`count(${column})`])
+    );
+  }
+
+  sum(column, args = {}) {
+    return (
+      this.prepareArgs(args)
+        .then(args => this.parseArgs(
+          this.knex.sum(column).from(this.specs.tableName),
+          args
+        ))
+        .then(a => a[0][`sum(\`${column}\`)`] || 0)
+    );
+  }
 };
 
 const initializeColumn = (table, name, column) => {
@@ -327,11 +353,15 @@ const initializeColumn = (table, name, column) => {
     case 'password':
       return table.binary(name, 60);
 
-    case 'string':
     case 'binary':
-      return table[column.type](name, column.length);
+      return table.binary(name, column.length);
+
+    case 'string':
+    case 'varchar':
+      return table.string(name, column.length);
 
     case 'int':
+    case 'integer':
       return table.integer(name);
 
     case 'float':
@@ -345,6 +375,7 @@ const initializeColumn = (table, name, column) => {
     case 'time':
       return table.time(name, column.precision);
 
+    case 'enumerable':
     case 'enum':
     case 'enu':
       return table.enu(name, column.values, column.options);
@@ -630,7 +661,7 @@ function __default(knex, models, printReady = true) {
               _models[model.origin][model.suffixTableName] = {};
             }
 
-            _models[model.origin][model.suffixTableName] = 
+            _models[model.origin][model.suffixTableName] =
               new KnexManageModel(knex, model);
 
             resolve();
