@@ -1,5 +1,3 @@
-import getPermission from "getPermission";
-
 export default {
   findOne: async (req, res) => {
     if (Array.isArray(req.query.id)) {

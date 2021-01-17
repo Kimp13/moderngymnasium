@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/menuInboxFragment"
+        android:id="@+id/menuFragmentNews"
+        android:icon="@drawable/ic_baseline_event_note"
+        android:title="@string/menu_news" />
+    <item
+        android:id="@+id/menuFragmentAnnouncements"
         android:icon="@drawable/ic_baseline_inbox"
         android:title="@string/menu_inbox" />
     <item
-        android:id="@+id/menuProfileFragment"
+        android:id="@+id/menuFragmentProfile"
         android:icon="@drawable/ic_baseline_person_pin"
         android:title="@string/menu_profile" />
 </menu>

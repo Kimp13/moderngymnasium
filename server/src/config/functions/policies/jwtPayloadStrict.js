@@ -9,6 +9,15 @@ module.exports = async (req, res) => {
         ) :
         undefined
     ),
+    (
+      req.headers.authentication ?
+        (
+          req.headers.authentication.substring(0, 6) === 'Bearer' ?
+            req.headers.authentication.substring(7) :
+            req.headers.authentication
+        ) :
+        undefined
+    ),
     req.cookies?.jwt,
     req.query?.jwt,
     req.body?.jwt

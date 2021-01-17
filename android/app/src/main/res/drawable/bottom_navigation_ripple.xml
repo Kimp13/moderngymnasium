@@ -2,5 +2,4 @@
 <ripple android:color="@color/colorAccent"
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="ring">
-    <item android:id="@android:id/mask" android:drawable="@color/colorAccent" />
 </ripple>

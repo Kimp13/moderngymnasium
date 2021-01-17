@@ -878,7 +878,9 @@ function itIsADefaultFunctionBuddy(knex, models, printReady = true) {
                                 table.foreign(
                                   relation.from.junctionColumn
                                 ).references(
-                                  `${tableFrom.tableName}.${relation.from.column}`
+                                  tableFrom.tableName +
+                                  '.' +
+                                  relation.from.column
                                 );
 
                                 table.integer(
@@ -922,8 +924,9 @@ function itIsADefaultFunctionBuddy(knex, models, printReady = true) {
                         });
                     } else {
                       if (!relation.from.hasOwnProperty('column')) {
-                        relation.from.column = tableTo.tableName + relationPostfix;
-                      }
+                        relation.from.column =
+                          tableTo.tableName + relationPostfix;
+                      }А
 
                       if (!relation.to.hasOwnProperty('column')) {
                         relation.to.column = 'id';

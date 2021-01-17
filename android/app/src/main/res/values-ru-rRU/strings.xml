@@ -35,7 +35,6 @@
     <string name="class_label">Класс: %1$s</string>
     <string name="text_label">Текст: %1$s</string>
 
-    <string name="menu_create">Объявить</string>
     <string name="menu_inbox">Объявления</string>
     <string name="menu_profile">Профиль</string>
     <string name="choose_recipient_role">Выберите хотя бы одного получателя</string>
@@ -50,4 +49,5 @@
     <string name="expand_text">Читать далее...</string>
     <string name="session_timed_out">Ваша сессия истекла. Пожалуйста, войдите снова.</string>
     <string name="create_announcement_new">Новое объявление</string>
+    <string name="menu_news">Новости</string>
 </resources>

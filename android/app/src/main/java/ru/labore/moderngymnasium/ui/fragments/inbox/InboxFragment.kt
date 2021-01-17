@@ -1,4 +1,4 @@
-package ru.labore.moderngymnasium.ui.inbox
+package ru.labore.moderngymnasium.ui.fragments.inbox
 
 import android.content.Intent
 import android.os.Bundle
@@ -8,11 +8,12 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.android.synthetic.main.menu_inbox_fragment.*
+import kotlinx.android.synthetic.main.fragment_inbox.*
 import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import org.kodein.di.DIAware
@@ -25,17 +26,18 @@ import ru.labore.moderngymnasium.ui.activities.AnnouncementDetailedActivity
 import ru.labore.moderngymnasium.ui.activities.LoginActivity
 import ru.labore.moderngymnasium.ui.activities.MainActivity
 import ru.labore.moderngymnasium.ui.adapters.MainRecyclerViewAdapter
+import ru.labore.moderngymnasium.ui.base.ListElementFragment
 import ru.labore.moderngymnasium.ui.base.ScopedFragment
 import java.net.ConnectException
 import kotlin.properties.Delegates
 
-class MenuInboxFragment : ScopedFragment(), DIAware {
+class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementFragment(
+    push,
+    finish
+), DIAware {
     override val di: DI by lazy { (context as DIAware).di }
 
-    private val viewModel: MenuInboxViewModel by viewModels()
-    private val viewManager: LinearLayoutManager by lazy {
-        LinearLayoutManager(requireActivity())
-    }
+    private val viewModel: InboxViewModel by viewModels()
 
     private var loading = true
     private var overallCount by Delegates.notNull<Int>()
@@ -46,7 +48,7 @@ class MenuInboxFragment : ScopedFragment(), DIAware {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.menu_inbox_fragment, container, false)
+        return inflater.inflate(R.layout.fragment_inbox, container, false)
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -76,6 +78,7 @@ class MenuInboxFragment : ScopedFragment(), DIAware {
         }
 
         inboxRecyclerView.apply {
+            val viewManager = LinearLayoutManager(requireActivity())
             val divider = DividerItemDecoration(requireContext(), viewManager.orientation)
             ResourcesCompat.getDrawable(
                 resources,

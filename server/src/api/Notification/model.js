@@ -1,21 +1,25 @@
 export default {
-    tableName: 'pushOptions',
+  tableName: 'pushOptions',
 
-    columns: {
-        subscription: {
-            type: 'text',
-            notNull: true
-        },
-
-        expiresAt: {
-            type: 'datetime'
-        }
+  columns: {
+    subscription: {
+      type: 'text',
+      notNull: true
     },
 
-    relations: [
-        {
-            with: 'user',
-            type: 'many:one'
-        }
-    ]
+    gcm: {
+      type: 'boolean'
+    },
+
+    expiresAt: {
+      type: 'datetime'
+    }
+  },
+
+  relations: [
+    {
+      with: 'user',
+      type: 'many:one'
+    }
+  ]
 };

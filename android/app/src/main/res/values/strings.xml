@@ -9,7 +9,7 @@
         http://192.168.1.8:3000/api/
     </string>
     <string name="default_notification_channel_id" translatable="false">&app_id;</string>
-    <string name="notification_channel_name">
+    <string name="notification_channel_name" translatable="false">
         &app_name;
     </string>
     <string name="notification_channel_description">
@@ -59,7 +59,7 @@
     <string name="text_label">Text: %1$s</string>
 
     <!-- Bottom Nav strings -->
-    <string name="menu_create">Announce</string>
+    <string name="menu_news">News</string>
     <string name="menu_inbox">Announcements</string>
     <string name="menu_profile">Profile</string>
 

@@ -1,4 +1,4 @@
-package ru.labore.moderngymnasium.ui.inbox
+package ru.labore.moderngymnasium.ui.fragments.inbox
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -6,9 +6,8 @@ import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.instance
 import ru.labore.moderngymnasium.data.repository.AppRepository
-import ru.labore.moderngymnasium.utils.lazyDeferred
 
-class MenuInboxViewModel(
+class InboxViewModel(
     application: Application
 ) : AndroidViewModel(application), DIAware {
     override val di: DI by lazy { (application as DIAware).di }
