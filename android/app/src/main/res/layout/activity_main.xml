@@ -27,7 +27,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias=".95"
+        app:layout_constraintVertical_bias="@dimen/bottom_nav_vertical_bias"
         app:layout_constraintWidth_default="percent"
         app:layout_constraintWidth_percent=".85"
         app:menu="@menu/bottom_nav" />

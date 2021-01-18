@@ -4,11 +4,10 @@ import android.animation.Animator
 import android.content.Intent
 import android.os.Bundle
 import android.view.*
-import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.TextView
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.create_fragment.*
+import kotlinx.android.synthetic.main.fragment_create.*
 import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import org.kodein.di.DIAware
@@ -40,7 +39,7 @@ class CreateFragment : ScopedFragment(), DIAware {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.create_fragment, container, false)
+        return inflater.inflate(R.layout.fragment_create, container, false)
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {

@@ -1,8 +1,12 @@
 package ru.labore.moderngymnasium.ui.activities
 
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.os.Bundle
+import android.util.DisplayMetrics
+import android.util.TypedValue
 import android.view.MenuItem
+import android.view.animation.TranslateAnimation
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.children
 import androidx.core.view.get
@@ -10,17 +14,24 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.LabelVisibilityMode
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.kodein.di.DI
 import org.kodein.di.DIAware
 import org.kodein.di.instance
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.repository.AppRepository
+import ru.labore.moderngymnasium.ui.base.ScopedActivity
 import ru.labore.moderngymnasium.ui.create.CreateFragment
 import ru.labore.moderngymnasium.ui.fragments.inbox.InboxFragment
 import ru.labore.moderngymnasium.ui.fragments.news.NewsFragment
 import ru.labore.moderngymnasium.ui.fragments.profile.ProfileFragment
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.concurrent.schedule
 
-class MainActivity : AppCompatActivity(), DIAware {
+class MainActivity : ScopedActivity(), DIAware {
     private val rootFragments = arrayOf<Fragment>(
         NewsFragment(pushFragment(0), dropFragment(0)),
         InboxFragment(pushFragment(1), dropFragment(1)),
@@ -59,6 +70,49 @@ class MainActivity : AppCompatActivity(), DIAware {
             }
 
             bottomNav.setOnNavigationItemReselectedListener {
+                val displayHeight =
+                    if (
+                    android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R
+                        ) {
+                        windowManager.currentWindowMetrics.bounds.height()
+                    } else {
+                        var metrics: DisplayMetrics = DisplayMetrics()
+
+                        windowManager.defaultDisplay.getMetrics(metrics)
+
+                        metrics.heightPixels
+                    }
+
+                val out = TypedValue()
+                resources.getValue(R.dimen.bottom_nav_vertical_bias, out, true)
+
+                val yDelta = (1 - out.float) * displayHeight * 3;
+
+                val animator = ObjectAnimator.ofFloat(
+                    bottomNav,
+                    "translationY",
+                    0F,
+                    yDelta
+                )
+                animator.duration = 400;
+                animator.start()
+
+                launch {
+                    delay(1000)
+
+                    val multiplier = if (animator.isRunning) {
+                        animator.currentPlayTime.toFloat() / animator.duration.toFloat()
+                    } else {
+                        1F
+                    }
+
+                    animator.end()
+
+                    animator.setFloatValues(yDelta * multiplier, 0F)
+
+                    animator.start()
+                }
+
                 setRootFragment(it)
             }
         }
@@ -72,7 +126,7 @@ class MainActivity : AppCompatActivity(), DIAware {
     }
 
     fun revealCreateFragment(x: Int, y: Int, radius: Float) {
-        val fragment = supportFragmentManager.findFragmentByTag("create_fragment")
+        val fragment = supportFragmentManager.findFragmentByTag("fragment_create")
             as CreateFragment
 
         fragment.reveal(x, y, radius)
