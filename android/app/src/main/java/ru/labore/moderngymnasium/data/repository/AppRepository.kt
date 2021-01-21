@@ -1,66 +1,33 @@
 package ru.labore.moderngymnasium.data.repository
 
 import android.content.Context
+import android.content.Intent
 import android.os.Parcel
 import android.os.Parcelable
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.MutableLiveData
-import com.google.gson.*
+import com.google.gson.Gson
 import kotlinx.coroutines.*
-import org.threeten.bp.Instant
-import org.threeten.bp.ZoneOffset
 import org.threeten.bp.ZonedDateTime
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.db.daos.AnnouncementEntityDao
 import ru.labore.moderngymnasium.data.db.daos.ClassEntityDao
 import ru.labore.moderngymnasium.data.db.daos.RoleEntityDao
 import ru.labore.moderngymnasium.data.db.daos.UserEntityDao
-import ru.labore.moderngymnasium.data.db.entities.*
-import ru.labore.moderngymnasium.data.network.*
-import ru.labore.moderngymnasium.data.sharedpreferences.entities.ActionPermissions
+import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
+import ru.labore.moderngymnasium.data.db.entities.ClassEntity
+import ru.labore.moderngymnasium.data.db.entities.RoleEntity
+import ru.labore.moderngymnasium.data.db.entities.UserEntity
+import ru.labore.moderngymnasium.data.network.AppNetwork
+import ru.labore.moderngymnasium.data.network.ClientConnectionException
+import ru.labore.moderngymnasium.data.network.ClientErrorException
+import ru.labore.moderngymnasium.data.sharedpreferences.entities.AnnounceMap
 import ru.labore.moderngymnasium.data.sharedpreferences.entities.User
+import ru.labore.moderngymnasium.ui.activities.LoginActivity
 import ru.labore.moderngymnasium.utils.announcementEntityToCaption
-import java.lang.reflect.Type
-
-data class DeferredAnnouncementInfo(
-    val users: HashMap<Int, Deferred<UserEntity?>>,
-    val classes: HashMap<Int, Deferred<ClassEntity?>>,
-    val roles: HashMap<Int, Deferred<RoleEntity?>>
-)
-
-class AnnouncementsWithCount(
-    val overallCount: Int,
-    var currentCount: Int,
-    val data: Array<AnnouncementEntity>
-) : Parcelable {
-    constructor(parcel: Parcel) : this(
-        parcel.readInt(),
-        parcel.readInt(),
-        parcel.createTypedArray(AnnouncementEntity.CREATOR) ?: emptyArray()
-    )
-
-    override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeInt(overallCount)
-        parcel.writeInt(currentCount)
-        parcel.writeTypedArray(data, flags)
-    }
-
-    override fun describeContents(): Int {
-        return 0
-    }
-
-    companion object CREATOR : Parcelable.Creator<AnnouncementsWithCount> {
-        override fun createFromParcel(parcel: Parcel): AnnouncementsWithCount {
-            return AnnouncementsWithCount(parcel)
-        }
-
-        override fun newArray(size: Int): Array<AnnouncementsWithCount?> {
-            return arrayOfNulls(size)
-        }
-    }
-
-}
+import java.net.ConnectException
 
 class AppRepository(
     private val context: Context,
@@ -72,7 +39,49 @@ class AppRepository(
     private val gson: Gson
 ) {
     companion object {
+        const val DEFAULT_LIMIT = 25
+
         const val HTTP_RESPONSE_CODE_UNAUTHORIZED = 401
+
+        enum class UpdateParameters {
+            UPDATE, DONT_UPDATE, DETERMINE
+        }
+
+        data class DeferredAnnouncementInfo(
+            val users: HashMap<Int, Deferred<UserEntity?>>,
+            val classes: HashMap<Int, Deferred<ClassEntity?>>,
+            val roles: HashMap<Int, Deferred<RoleEntity?>>
+        )
+
+        class AnnouncementsWithCount(
+            private val overallCount: Int,
+            val data: Array<AnnouncementEntity>
+        ) : Parcelable {
+            constructor(parcel: Parcel) : this(
+                parcel.readInt(),
+                parcel.createTypedArray(AnnouncementEntity.CREATOR) ?: emptyArray()
+            )
+
+            override fun writeToParcel(parcel: Parcel, flags: Int) {
+                parcel.writeInt(overallCount)
+                parcel.writeTypedArray(data, flags)
+            }
+
+            override fun describeContents(): Int {
+                return 0
+            }
+
+            companion object CREATOR : Parcelable.Creator<AnnouncementsWithCount> {
+                override fun createFromParcel(parcel: Parcel): AnnouncementsWithCount {
+                    return AnnouncementsWithCount(parcel)
+                }
+
+                override fun newArray(size: Int): Array<AnnouncementsWithCount?> {
+                    return arrayOfNulls(size)
+                }
+            }
+
+        }
     }
 
     val inboxAnnouncement: MutableLiveData<AnnouncementEntity> =
@@ -80,6 +89,7 @@ class AppRepository(
 
     var isAppForeground: Boolean = true
     var user: User? = null
+    var announceMap = AnnounceMap()
     var unreadAnnouncements: MutableList<AnnouncementEntity> = mutableListOf()
     var unreadAnnouncementsPushListener: ((AnnouncementEntity) -> Unit)? = null
 
@@ -97,6 +107,55 @@ class AppRepository(
 
         if (userString != null) {
             user = gson.fromJson(userString, User::class.java)
+
+            if (user != null) {
+                val mapString = sharedPreferences.getString("announce_map", null)
+                announceMap = gson.fromJson(mapString, AnnounceMap::class.java)
+
+                GlobalScope.launch {
+                    try {
+                        val new = appNetwork.fetchMe(user!!.jwt)
+                        val newMap = appNetwork.fetchAnnounceMap(user!!.jwt)
+                        val editor = sharedPreferences.edit()
+                        
+                        editor.putString("announce_map", gson.toJson(newMap))
+
+                        if (new != null && user != null) {
+                            user = User(user!!.jwt, new.data)
+
+                            editor.putString("user", gson.toJson(user))
+                        }
+
+                        editor.apply()
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            context,
+                            when (e) {
+                                is ConnectException -> context.getString(R.string.server_unavailable)
+                                is ClientConnectionException -> context.getString(R.string.no_internet)
+                                is ClientErrorException -> {
+                                    if (e.errorCode == AppRepository.HTTP_RESPONSE_CODE_UNAUTHORIZED) {
+                                        user = null
+                                        val intent = Intent(context, LoginActivity::class.java)
+                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                                        context.startActivity(intent)
+
+                                        context.getString(R.string.session_timed_out)
+                                    } else {
+                                        println(e.toString())
+                                        "An unknown error has occurred."
+                                    }
+                                }
+                                else -> {
+                                    println(e.toString())
+                                    "An unknown error has occurred."
+                                }
+                            },
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
         }
 
         notificationBuilder.setSmallIcon(R.drawable.ic_baseline_announcement)
@@ -162,15 +221,15 @@ class AppRepository(
         }
     }
 
-    fun fetchDeferredUser(id: Int) = GlobalScope.async {
+    private fun fetchDeferredUser(id: Int) = GlobalScope.async {
         appNetwork.fetchUser(id)
     }
 
-    fun fetchDeferredRole(id: Int) = GlobalScope.async {
+    private fun fetchDeferredRole(id: Int) = GlobalScope.async {
         appNetwork.fetchRole(id)
     }
 
-    fun fetchDeferredClass(id: Int) = GlobalScope.async {
+    private fun fetchDeferredClass(id: Int) = GlobalScope.async {
         appNetwork.fetchClass(id)
     }
 
@@ -181,17 +240,29 @@ class AppRepository(
             HashMap(),
             HashMap()
         ),
-        forceFetch: Boolean? = false
+        forceFetch: UpdateParameters = UpdateParameters.DETERMINE
     ) {
-        if (forceFetch != null) {
+        if (forceFetch == UpdateParameters.DONT_UPDATE) {
+            entity.author = userEntityDao.getUser(entity.authorId)
+            entity.authorRole = if (entity.author?.roleId != null) {
+                roleEntityDao.getRole(entity.author!!.roleId!!)
+            } else {
+                null
+            }
+            entity.authorClass = if (entity.author?.classId != null) {
+                classEntityDao.getClass(entity.author!!.classId!!)
+            } else {
+                null
+            }
+        } else {
             val oneDayBefore = ZonedDateTime.now().minusDays(1)
-            if (forceFetch) {
+            if (forceFetch == UpdateParameters.UPDATE) {
                 entity.author = userEntityDao
                     .getUser(entity.authorId)
             }
 
             if (
-                forceFetch ||
+                forceFetch == UpdateParameters.UPDATE ||
                 entity.author
                     ?.updatedAt
                     ?.isBefore(oneDayBefore) != false
@@ -212,14 +283,14 @@ class AppRepository(
                 val weekBefore = ZonedDateTime.now().minusWeeks(1)
 
                 if (entity.author!!.roleId != null) {
-                    if (!forceFetch) {
+                    if (forceFetch == UpdateParameters.DETERMINE) {
                         entity.authorRole = roleEntityDao.getRole(
                             entity.author!!.roleId!!
                         )
                     }
 
                     if (
-                        forceFetch ||
+                        forceFetch == UpdateParameters.UPDATE ||
                         entity.authorRole
                             ?.updatedAt
                             ?.isBefore(weekBefore) != false
@@ -243,14 +314,14 @@ class AppRepository(
                 }
 
                 if (entity.author!!.classId != null) {
-                    if (!forceFetch) {
+                    if (forceFetch == UpdateParameters.DETERMINE) {
                         entity.authorClass = classEntityDao.getClass(
                             entity.author!!.classId!!
                         )
                     }
 
                     if (
-                        forceFetch ||
+                        forceFetch == UpdateParameters.UPDATE ||
                         entity.authorClass
                             ?.updatedAt
                             ?.isBefore(weekBefore) != false
@@ -270,18 +341,6 @@ class AppRepository(
                         }
                     }
                 }
-            }
-        } else {
-            entity.author = userEntityDao.getUser(entity.authorId)
-            entity.authorRole = if (entity.author?.roleId != null) {
-                roleEntityDao.getRole(entity.author!!.roleId!!)
-            } else {
-                null
-            }
-            entity.authorClass = if (entity.author?.classId != null) {
-                classEntityDao.getClass(entity.author!!.classId!!)
-            } else {
-                null
             }
         }
     }
@@ -356,18 +415,17 @@ class AppRepository(
 
     suspend fun getAnnouncements(
         offset: Int = 0,
-        limit: Int = 25,
-        forceFetch: Boolean? = false
-    ): AnnouncementsWithCount {
-        val announcements: AnnouncementsWithCount
+        forceFetch: UpdateParameters = UpdateParameters.DETERMINE
+    ): Array<AnnouncementEntity> {
+        val announcements: Array<AnnouncementEntity>
 
         if (user == null) {
-            return AnnouncementsWithCount(0, 0, emptyArray())
+            return emptyArray()
         }
 
         val isNeededToUpdate: Boolean = when (forceFetch) {
-            true -> true
-            false -> {
+            UpdateParameters.UPDATE -> true
+            UpdateParameters.DETERMINE -> {
                 val announcement: AnnouncementEntity? =
                     announcementEntityDao.getAnnouncementAtOffset(offset)
                 val now: ZonedDateTime = ZonedDateTime.now()
@@ -376,35 +434,22 @@ class AppRepository(
                 announcement?.updatedAt?.isAfter(now) != false ||
                         announcement.updatedAt!!.isBefore(tenMinutesBefore)
             }
-            else -> false
+            UpdateParameters.DONT_UPDATE -> false
         }
 
         if (isNeededToUpdate) {
-            announcements = AnnouncementsWithCount(
-                appNetwork.countAnnouncements(user!!.jwt),
-                0,
-                appNetwork.fetchAnnouncements(
-                    user!!.jwt,
-                    offset,
-                    limit
-                )
+            announcements = appNetwork.fetchAnnouncements(
+                user!!.jwt,
+                offset
             )
 
-            announcements.data.forEach {
+            announcements.forEach {
                 println(it.text)
             }
 
-            announcements.currentCount = announcements.data.size
-
-            persistFetchedAnnouncements(announcements.data)
+            persistFetchedAnnouncements(announcements)
         } else {
-            announcements = AnnouncementsWithCount(
-                announcementEntityDao.countAnnouncements(),
-                0,
-                announcementEntityDao.getAnnouncements(offset, limit)
-            )
-
-            announcements.currentCount = announcements.data.size
+            announcements = announcementEntityDao.getAnnouncements(offset, DEFAULT_LIMIT)
         }
 
         val updated = DeferredAnnouncementInfo(
@@ -413,9 +458,9 @@ class AppRepository(
             HashMap()
         )
 
-        List(announcements.data.size) {
+        List(announcements.size) {
             GlobalScope.launch {
-                populateAnnouncementEntity(announcements.data[it], updated, forceFetch)
+                populateAnnouncementEntity(announcements[it], updated, forceFetch)
             }
         }.joinAll()
 
@@ -423,16 +468,11 @@ class AppRepository(
     }
 
     suspend fun getUserRoles(): Array<RoleEntity?> = if (
-        user?.data?.permissions?.all == true ||
-        user?.data?.permissions?.announcement?.create?.all == true
+        user?.data?.permissions?.get("announcement")?.get("create")?.all == true
     ) {
         appNetwork.fetchAllRoles(user!!.jwt)
-    }  else if (
-        user?.data?.permissions?.announcement?.create != null
-    ) {
-        getRoles(user!!.data.permissions!!.announcement!!.create!!.contents)
     } else {
-        emptyArray()
+        getRoles(user!!.data.permissions["announcement"]["create"].contents)
     }
 
     suspend fun getUserClasses(): HashMap<Int, ArrayList<ClassEntity>> {

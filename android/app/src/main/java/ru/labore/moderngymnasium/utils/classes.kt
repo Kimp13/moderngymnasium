@@ -5,6 +5,7 @@ import org.threeten.bp.Instant
 import org.threeten.bp.ZoneOffset
 import org.threeten.bp.ZonedDateTime
 import ru.labore.moderngymnasium.data.sharedpreferences.entities.AllPermissions
+import ru.labore.moderngymnasium.data.sharedpreferences.entities.AnnounceMap
 import java.lang.reflect.Type
 
 class JsonPermissionsDeserializerImpl : JsonDeserializer<AllPermissions> {
@@ -13,7 +14,7 @@ class JsonPermissionsDeserializerImpl : JsonDeserializer<AllPermissions> {
         typeOfT: Type?,
         context: JsonDeserializationContext?
     ): AllPermissions? {
-        return if (json != null && json.isJsonObject) {
+        return if (json != null) {
             println(json.toString())
 
             if (json.isJsonObject) {
@@ -32,26 +33,10 @@ class JsonPermissionsSerializerImpl : JsonSerializer<AllPermissions> {
         src: AllPermissions?,
         typeOfSrc: Type?,
         context: JsonSerializationContext?
-    ): JsonElement {
-        return if (src == null) {
-            JsonPrimitive(false)
-        } else {
-            if (src.all) {
-                JsonPrimitive(true)
-            } else {
-                val result = JsonObject()
-
-                if (src.announcement != null) {
-                    result.add("announcement", src.announcement.serialize())
-                }
-
-                if (src.profile != null) {
-                    result.add("profile", src.profile.serialize())
-                }
-
-                result
-            }
-        }
+    ): JsonElement = when {
+        src == null -> JsonPrimitive(false)
+        src.all -> JsonPrimitive(true)
+        else -> src.serialize()
     }
 }
 
@@ -80,5 +65,30 @@ class JsonDateDeserializerImpl : JsonDeserializer<ZonedDateTime> {
         } else {
             ZonedDateTime.parse(json.asString)
         }
+    }
+}
+
+class JsonAnnounceMapDeserializerImpl : JsonDeserializer<AnnounceMap> {
+    override fun deserialize(
+        json: JsonElement?,
+        typeOfT: Type?,
+        context: JsonDeserializationContext?
+    ): AnnounceMap {
+        return if (json != null && json.isJsonObject) {
+            AnnounceMap(json.asJsonObject)
+        } else {
+            AnnounceMap()
+        }
+    }
+}
+
+class JsonAnnounceMapSerializerImpl : JsonSerializer<AnnounceMap> {
+    override fun serialize(
+        src: AnnounceMap?,
+        typeOfSrc: Type?,
+        context: JsonSerializationContext?
+    ): JsonElement = when (src) {
+        null -> JsonPrimitive(false)
+        else -> src.serialize()
     }
 }

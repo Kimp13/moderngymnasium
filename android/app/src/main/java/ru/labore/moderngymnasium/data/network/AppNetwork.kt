@@ -26,6 +26,14 @@ class AppNetwork(context: Context, private val gson: Gson) : Interceptor {
         token: String
     ) = utility.pushToken(jwt, token)
 
+    suspend fun fetchMe(
+        jwt: String
+    ) = utility.fetchMe(jwt)
+
+    suspend fun fetchAnnounceMap(
+        jwt: String
+    ) = utility.fetchAnnouncementMap(jwt)
+
     suspend fun fetchAnnouncement(
         jwt: String,
         id: Int
@@ -33,9 +41,8 @@ class AppNetwork(context: Context, private val gson: Gson) : Interceptor {
 
     suspend fun fetchAnnouncements(
         jwt: String,
-        offset: Int,
-        limit: Int
-    ) = utility.fetchAnnouncements(jwt, offset, limit)
+        offset: Int
+    ) = utility.fetchAnnouncements(jwt, offset)
 
     suspend fun countAnnouncements(
         jwt: String

@@ -689,19 +689,20 @@ function itIsADefaultFunctionBuddy(knex, models, printReady = true) {
             resolve();
           };
 
-          if (!model.hasOwnProperty('origin')) {
+          if (!('origin' in model)) {
             model.origin = 'unspecified';
           }
 
-          if (model.hasOwnProperty('relations')) {
+          if ('relations' in model) {
             const access = model.tableName + ',' + model.origin;
             const resultObject = {};
 
-            if (!relations.hasOwnProperty(access)) {
+            if (!('access' in relations)) {
               relations[access] = {};
             }
 
             for (const relation of model.relations) {
+
               if (typeof relation.with === 'string') {
                 relation.with = [relation.with, 'unspecified'];
               }
@@ -709,34 +710,36 @@ function itIsADefaultFunctionBuddy(knex, models, printReady = true) {
               const withString = relation.with[0] + ',' + relation.with[1];
               resultObject[withString] = relation;
 
+              function makeItFrom() {
+                if (!(withString in relations[access])) {
+                  relations[access][withString] = {};
+                }
+
+                relations[access][withString].from = relation;
+              }
+
+              function makeItTo() {
+                if (!(withString in relations)) {
+                  relations[withString] = {};
+                  relations[withString][access] = {};
+                } else if (!(access in relations[withString])) {
+                  relations[withString][access] = {};
+                }
+
+                relations[withString][access].to = relation;
+              }
+
               if (relation.type === 'one:one') {
                 if (relation.from) {
-                  if (!relations[access].hasOwnProperty(withString)) {
-                    relations[access][withString] = {};
-                  }
-
-                  relations[access][withString].from = relation;
+                  makeItFrom();
                 } else {
-                  if (!relations.hasOwnProperty(withString)) {
-                    relations[withString] = {};
-                    relations[withString][access] = {};
-                  } else if (
-                    !relations[withString].hasOwnProperty(access)
-                  ) {
-                    relations[withString][access] = {};
-                  }
-
-                  relations[withString][access].to = relation;
+                  makeItTo();
                 }
               } else {
-                if (relations.hasOwnProperty(withString)) {
-                  relations[withString][access] = {
-                    to: relation
-                  };
+                if (withString in relations) {
+                  makeItTo();
                 } else {
-                  relations[access][withString] = {
-                    from: relation
-                  };
+                  makeItFrom();
                 }
               }
             }
@@ -926,7 +929,7 @@ function itIsADefaultFunctionBuddy(knex, models, printReady = true) {
                       if (!relation.from.hasOwnProperty('column')) {
                         relation.from.column =
                           tableTo.tableName + relationPostfix;
-                      }А
+                      } А
 
                       if (!relation.to.hasOwnProperty('column')) {
                         relation.to.column = 'id';

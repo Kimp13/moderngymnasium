@@ -66,4 +66,5 @@
     <!-- Announcement Detailed Activity strings -->
     <string name="announcement_detailed_activity_action_bar_title">Announcement</string>
     <string name="expand_text">Expand text…</string>
+    <string name="no_announcements">There are no announcements yet.</string>
 </resources>

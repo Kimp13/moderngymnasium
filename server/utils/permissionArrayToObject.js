@@ -24,6 +24,8 @@ module.exports = (permissionsArray = []) => {
           permission.operation
         ], true);
       }
+    } if (permission.type === '*') {
+      return true;
     } else {
       set(permissionObject, permission.type, true);
     }

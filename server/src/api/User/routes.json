@@ -10,6 +10,14 @@
     "handler": "count"
   },
   {
+    "method": "GET",
+    "path": "/me",
+    "handler": "me",
+    "config": {
+      "policies": ["userStrict"]
+    }
+  },
+  {
     "method": "POST",
     "path": "/signup",
     "handler": "signUp"

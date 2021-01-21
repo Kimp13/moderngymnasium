@@ -7,11 +7,19 @@
   {
     "method": "GET",
     "path": "/mine",
-    "handler": "find",
+    "handler": "getMap",
     "config": {
       "policies": [
         "userStrict"
       ]
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/all",
+    "handler": "all",
+    "config": {
+      "policies": ["userStrict"]
     }
   }
 ]

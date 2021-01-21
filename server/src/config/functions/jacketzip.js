@@ -20,7 +20,7 @@ module.exports = function jacketzip() {
     for (const role of mg.cache.roles) {
       role.permissions = parsePermissions(role._relations.permission);
 
-      if ('announcement' in role.permissions) {
+      if (role.permissions !== true && 'announcement' in role.permissions) {
         if ('create' in role.permissions.announcement) {
           parseAndSort(role.permissions.announcement.create);
         }

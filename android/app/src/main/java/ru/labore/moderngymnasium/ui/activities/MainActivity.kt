@@ -126,7 +126,7 @@ class MainActivity : ScopedActivity(), DIAware {
     }
 
     fun revealCreateFragment(x: Int, y: Int, radius: Float) {
-        val fragment = supportFragmentManager.findFragmentByTag("fragment_create")
+        val fragment = supportFragmentManager.findFragmentById(R.id.createFragment)
             as CreateFragment
 
         fragment.reveal(x, y, radius)

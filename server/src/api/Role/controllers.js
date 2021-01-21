@@ -1,3 +1,5 @@
+import getPermission from "getPermission";
+
 export default {
   findOne: async (req, res) => {
     if (Array.isArray(req.query.id)) {
@@ -25,7 +27,25 @@ export default {
     }
   },
 
-  find: async (req, res) => {
+  getMap: async (req, res) => {
     res.send(await mg.services.role.getUsersCreateMap(req.user));
+  },
+
+  all: async (req, res) => {
+    const permission = getPermission(
+      req.user.permissions,
+      ['announcement', 'create']
+    );
+
+    if (permission === true) {
+      res.send(mg.cache.roles.map(role => ({
+        id: role.id,
+        type: role.type,
+        name: role.name
+      })));
+      return;
+    }
+
+    res.throw(403);
   }
 }

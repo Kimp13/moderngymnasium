@@ -32,7 +32,7 @@ class CreateFragment : ScopedFragment(), DIAware {
     private val checkedRoles: HashMap<Int, MutableList<Int>> = hashMapOf()
     private val repository: AppRepository by instance()
     private var announcementText: String? = null
-    private var UILoaded = false
+    private var uiLoaded = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -44,7 +44,6 @@ class CreateFragment : ScopedFragment(), DIAware {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-
 
         createFragmentLayout.setOnClickListener { hideKeyboard() }
         createAnnouncementRoleChoose.setOnClickListener { hideKeyboard() }
@@ -110,9 +109,9 @@ class CreateFragment : ScopedFragment(), DIAware {
         circularReveal.duration = 600
         circularReveal.start()
 
-        if (!UILoaded) {
+        if (!uiLoaded) {
             loadUI()
-            UILoaded = true
+            uiLoaded = true
         }
     }
 
@@ -164,12 +163,9 @@ class CreateFragment : ScopedFragment(), DIAware {
                     if (classes[firstGrade]?.size == 1) {
                         checkboxLayout = LabelledCheckbox(
                             activity,
-                            "${
-                                when (Locale.getDefault().language) {
-                                    "ru" -> role.nameRu
-                                    else -> role.name
-                                }
-                            }, ${classes[firstGrade]!![0].grade}${classes[firstGrade]!![0].letter}"
+                            "${role.name}, ${
+                                classes[firstGrade]!![0].grade}${classes[firstGrade]!![0].letter
+                                }"
                         )
 
                         checkboxLayout.checkedChangeHandler = { checked ->
@@ -184,12 +180,7 @@ class CreateFragment : ScopedFragment(), DIAware {
                     } else {
                         checkboxLayout = ParentCheckbox(
                             activity,
-                            "${
-                                when (Locale.getDefault().language) {
-                                    "ru" -> role.nameRu
-                                    else -> role.name
-                                }
-                            }, ${classes[firstGrade]!![0].grade}"
+                            "${role.name}, ${classes[firstGrade]!![0].grade}"
                         )
 
                         classes[firstGrade]!!.forEach { classEntity ->
@@ -209,10 +200,7 @@ class CreateFragment : ScopedFragment(), DIAware {
             } else if (classes.size > 1) {
                 checkboxLayout = ParentCheckbox(
                     activity,
-                    when (Locale.getDefault().language) {
-                        "ru" -> role.nameRu
-                        else -> role.name
-                    }
+                    role.name
                 )
 
                 classes.keys.forEach {

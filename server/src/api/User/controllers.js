@@ -11,11 +11,11 @@ module.exports = {
       const user = await mg.query('user').findOne({
         id
       }, [], [
-          'id',
-          'firstName',
-          'lastName',
-          'roleId',
-          'classId' 
+        'id',
+        'firstName',
+        'lastName',
+        'roleId',
+        'classId'
       ]);
 
       res.send(user);
@@ -29,6 +29,21 @@ module.exports = {
   count: async (_, res) => {
     res.send({
       count: mg.cache.usersCount
+    });
+  },
+
+  me: async (req, res) => {
+    res.send({
+      jwt: "",
+      data: {
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        username: req.user.username,
+        id: req.user.id,
+        roleId: req.user.roleId,
+        classId: req.user.classId,
+        permissions: req.user.permissions
+      }
     });
   },
 

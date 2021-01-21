@@ -1,162 +1,85 @@
 package ru.labore.moderngymnasium.data.sharedpreferences.entities
 import com.google.gson.*
-import com.google.gson.annotations.SerializedName
 
-val gson = Gson()
-
-class ActionPermissionsTargets {
+abstract class Permissions {
     val all: Boolean
-    val contents: Array<Int>
 
     constructor(wildcard: Boolean) {
         all = wildcard
+    }
+}
+
+class ActionPermissionsTargets: Permissions {
+    val contents: Array<Int>
+    val size: Int
+        get() = contents.size
+
+    constructor(wildcard: Boolean) : super(wildcard) {
         contents = arrayOf()
     }
 
-    constructor(targets: Array<Int>) {
-        all = false
+    constructor(targets: Array<Int>) : super(false) {
         contents = targets
     }
 
-    fun serialize (): JsonElement {
-        return if (all) {
-            JsonPrimitive(true)
-        } else {
+    operator fun get(index: Int) =
+        contents[index]
+
+    fun serialize (): JsonElement = when {
+        all -> JsonPrimitive(true)
+        size == 0 -> JsonPrimitive(false)
+        else -> {
             val result = JsonArray()
 
-            result.add(gson.toJson(contents, Array<Int>::class.java))
+            for (i in 0 until size) {
+                result.add(contents[i])
+            }
 
             result
         }
     }
 }
 
-class ActionPermissions {
-    val all: Boolean
-    val create: ActionPermissionsTargets?
-    val read: ActionPermissionsTargets?
-    val update: ActionPermissionsTargets?
-    val delete: ActionPermissionsTargets?
-    val comment: ActionPermissionsTargets?
+class OperationPermissions: Permissions {
+    private val attributes = HashMap<String, ActionPermissionsTargets>()
+    val size: Int
+        get() = attributes.size
 
-    constructor (wildcard: Boolean) {
-        all = wildcard
+    constructor (wildcard: Boolean): super(wildcard)
 
-        create = ActionPermissionsTargets(wildcard)
-        read = ActionPermissionsTargets(wildcard)
-        update = ActionPermissionsTargets(wildcard)
-        delete = ActionPermissionsTargets(wildcard)
-        comment = ActionPermissionsTargets(wildcard)
-    }
-
-    constructor (json: JsonObject) {
-        all = false
-
-        json.get("create").let {
-            create = if (it == null) {
-                null
-            } else {
-                if (it.isJsonArray) {
-                    ActionPermissionsTargets(
-                        gson.fromJson(it, Array<Int>::class.java)
-                    )
+    constructor (json: JsonObject): super(false) {
+        val entrySet: Set<Map.Entry<String?, JsonElement?>> = json.entrySet()
+        for ((key, value) in entrySet) {
+            if (key != null) {
+                if (value?.isJsonArray == true) {
+                    val array = value.asJsonArray
+                    attributes[key] = ActionPermissionsTargets(Array(
+                        array.size()
+                    ) {
+                        array.get(it).asInt
+                    })
                 } else {
-                    ActionPermissionsTargets(
-                        it.asBoolean
-                    )
-                }
-            }
-        }
-
-        json.get("read").let {
-            read = if (it == null) {
-                null
-            } else {
-                if (it.isJsonArray) {
-                    ActionPermissionsTargets(
-                        gson.fromJson(it, Array<Int>::class.java)
-                    )
-                } else {
-                    ActionPermissionsTargets(
-                        it.asBoolean
-                    )
-                }
-            }
-        }
-
-        json.get("update").let {
-            update = if (it == null) {
-                null
-            } else {
-                if (it.isJsonArray) {
-                    ActionPermissionsTargets(
-                        gson.fromJson(it, Array<Int>::class.java)
-                    )
-                } else {
-                    ActionPermissionsTargets(
-                        it.asBoolean
-                    )
-                }
-            }
-        }
-
-        json.get("delete").let {
-            delete = if (it == null) {
-                null
-            } else {
-                if (it.isJsonArray) {
-                    ActionPermissionsTargets(
-                        gson.fromJson(it, Array<Int>::class.java)
-                    )
-                } else {
-                    ActionPermissionsTargets(
-                        it.asBoolean
-                    )
-                }
-            }
-        }
-
-        json.get("comment").let {
-            comment = if (it == null) {
-                null
-            } else {
-                if (it.isJsonArray) {
-                    ActionPermissionsTargets(
-                        gson.fromJson(it, Array<Int>::class.java)
-                    )
-                } else {
-                    ActionPermissionsTargets(
-                        it.asBoolean
-                    )
+                    attributes[key] = ActionPermissionsTargets(value?.asBoolean == true)
                 }
             }
         }
     }
 
-    fun serialize (): JsonElement {
-        return if (all) {
-            JsonPrimitive(true)
+    operator fun get(key: String): ActionPermissionsTargets =
+        if (all) {
+            ActionPermissionsTargets(true)
         } else {
+            attributes[key] ?: ActionPermissionsTargets(false)
+        }
+
+    fun serialize (): JsonElement = when {
+        all -> JsonPrimitive(true)
+        size == 0 -> JsonPrimitive(false)
+        else -> {
             val result = JsonObject()
 
-            if (create != null) {
-                result.add("create", create.serialize())
-            }
-
-            if (read != null) {
-                result.add("read", read.serialize())
-            }
-
-            if (update != null) {
-                result.add("update", update.serialize())
-            }
-
-            if (delete != null) {
-                result.add("delete", delete.serialize())
-            }
-
-            if (comment != null) {
-                result.add("comment", comment.serialize())
+            for ((key, value) in attributes) {
+                result.add(key, value.serialize())
             }
 
             result
@@ -164,70 +87,57 @@ class ActionPermissions {
     }
 }
 
-class AllPermissions {
-    val all: Boolean
-    val announcement: ActionPermissions?
-    val profile: ActionPermissions?
+class AllPermissions: Permissions {
+    private val attributes = HashMap<String, OperationPermissions>()
+    val size: Int
+        get() = attributes.size
 
-    constructor (wildcard: Boolean) {
-        all = wildcard
+    constructor (wildcard: Boolean): super(wildcard)
 
-        announcement = ActionPermissions(wildcard)
-        profile = ActionPermissions(wildcard)
-    }
-
-    constructor (json: JsonObject) {
-        all = false
-
-        json.get("announcement").let {
-            announcement = if (it == null) {
-                null
-            } else {
-                if (it.isJsonObject) {
-                    ActionPermissions(
-                        it.asJsonObject
-                    )
+    constructor (json: JsonObject): super(false) {
+        val entrySet: Set<Map.Entry<String?, JsonElement?>> = json.entrySet()
+        for ((key, value) in entrySet) {
+            if (key != null) {
+                if (value?.isJsonObject == true) {
+                    val obj = value.asJsonObject
+                    attributes[key] = OperationPermissions(obj)
                 } else {
-                    ActionPermissions(
-                        it.asBoolean
-                    )
+                    attributes[key] = OperationPermissions(value?.asBoolean == true)
                 }
             }
         }
+    }
 
-        json.get("profile").let {
-            profile = if (it == null) {
-                null
-            } else {
-                if (it.isJsonObject) {
-                    ActionPermissions(
-                        it.asJsonObject
-                    )
-                } else {
-                    ActionPermissions(
-                        it.asBoolean
-                    )
-                }
+    operator fun get(key: String): OperationPermissions =
+        if (all) {
+            OperationPermissions(true)
+        } else {
+            attributes[key] ?: OperationPermissions(false)
+        }
+
+    fun serialize (): JsonElement = when {
+        all -> JsonPrimitive(true)
+        size == 0 -> JsonPrimitive(false)
+        else -> {
+            val result = JsonObject()
+
+            for ((key, value) in attributes) {
+                result.add(key, value.serialize())
             }
+
+            result
         }
     }
 }
 
 data class UserData(
-    @SerializedName("first_name")
     val firstName: String? = null,
-
-    @SerializedName("last_name")
     val lastName: String? = null,
-
-    @SerializedName("class_id")
     val classId: Int? = null,
-
-    @SerializedName("role_id")
     val roleId: Int? = null,
 
     val username: String,
-    val permissions: AllPermissions? = null
+    val permissions: AllPermissions = AllPermissions(false)
 )
 
 data class User(

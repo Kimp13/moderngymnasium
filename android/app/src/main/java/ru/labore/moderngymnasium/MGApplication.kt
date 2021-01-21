@@ -17,10 +17,8 @@ import ru.labore.moderngymnasium.data.db.AppDatabase
 import ru.labore.moderngymnasium.data.network.AppNetwork
 import ru.labore.moderngymnasium.data.repository.AppRepository
 import ru.labore.moderngymnasium.data.sharedpreferences.entities.AllPermissions
-import ru.labore.moderngymnasium.utils.JsonDateDeserializerImpl
-import ru.labore.moderngymnasium.utils.JsonDateSerializerImpl
-import ru.labore.moderngymnasium.utils.JsonPermissionsDeserializerImpl
-import ru.labore.moderngymnasium.utils.JsonPermissionsSerializerImpl
+import ru.labore.moderngymnasium.data.sharedpreferences.entities.AnnounceMap
+import ru.labore.moderngymnasium.utils.*
 
 class MGApplication : Application(), DIAware, LifecycleObserver {
     override val di = DI.lazy {
@@ -29,6 +27,8 @@ class MGApplication : Application(), DIAware, LifecycleObserver {
             .registerTypeAdapter(ZonedDateTime::class.java, JsonDateDeserializerImpl())
             .registerTypeAdapter(AllPermissions::class.java, JsonPermissionsSerializerImpl())
             .registerTypeAdapter(AllPermissions::class.java, JsonPermissionsDeserializerImpl())
+            .registerTypeAdapter(AnnounceMap::class.java, JsonAnnounceMapSerializerImpl())
+            .registerTypeAdapter(AnnounceMap::class.java, JsonAnnounceMapDeserializerImpl())
             .create()
 
         import(androidXModule(this@MGApplication))

@@ -9,48 +9,48 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
-import kotlinx.android.synthetic.main.activity_announcement_detailed.*
-import kotlinx.android.synthetic.main.inbox_recycler_view.*
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.utils.announcementEntityToCaption
 
-fun isWordCharacter(character: Char): Boolean = when(character.toInt()) {
-    in 0..47 -> false
-    in 58..64 -> false
-    in 91..96 -> false
-    in 123..126 -> false
-    else -> true
-}
-
-fun trimTextTo(text: String, amount: Int): String {
-    if (text.length <= amount) {
-        return text
-    }
-
-    var i = amount
-
-    while (isWordCharacter(text[--i])) {
-        if (i == 0) {
-            return "${text.substring(0, amount)}…"
-        }
-    }
-
-    val indexAfterFirstLoop = i
-    while(isWordCharacter(text[--i])) {
-        if (i == 0) {
-            return "${text.substring(indexAfterFirstLoop + 1)}…"
-        }
-    }
-
-    return "${text.substring(0, i + 1)}…"
-}
-
-class MainRecyclerViewAdapter(
+class InboxRecyclerViewAdapter(
     private val resources: Resources,
     var announcements: MutableList<AnnouncementEntity>,
     private val clickHandler: (AnnouncementEntity) -> Unit = {}
-) : RecyclerView.Adapter<MainRecyclerViewAdapter.MainViewHolder>() {
+) : RecyclerView.Adapter<InboxRecyclerViewAdapter.MainViewHolder>() {
+    companion object {
+        private fun isWordCharacter(character: Char): Boolean = when(character.toInt()) {
+            in 0..47 -> false
+            in 58..64 -> false
+            in 91..96 -> false
+            in 123..126 -> false
+            else -> true
+        }
+
+        private fun trimTextTo(text: String, amount: Int): String {
+            if (text.length <= amount) {
+                return text
+            }
+
+            var i = amount
+
+            while (isWordCharacter(text[--i])) {
+                if (i == 0) {
+                    return "${text.substring(0, amount)}…"
+                }
+            }
+
+            val indexAfterFirstLoop = i
+            while(isWordCharacter(text[--i])) {
+                if (i == 0) {
+                    return "${text.substring(indexAfterFirstLoop + 1)}…"
+                }
+            }
+
+            return "${text.substring(0, i + 1)}…"
+        }
+    }
+
     class MainViewHolder(val card: MaterialCardView) : RecyclerView.ViewHolder(card)
     var isClickable: Boolean = true
 
@@ -69,7 +69,7 @@ class MainRecyclerViewAdapter(
         val textView = linearLayout.getChildAt(1) as TextView
         val expandButton = linearLayout.getChildAt(2)
 
-        holder.card.setOnClickListener{
+        holder.card.setOnClickListener {
             if (isClickable) {
                 clickHandler(announcements[position])
             }
@@ -139,6 +139,8 @@ class MainRecyclerViewAdapter(
         val positionStart = itemCount
 
         announcements.addAll(newAnnouncements)
+
+        println(announcements.toString())
 
         notifyItemRangeInserted(
             positionStart,

@@ -2,11 +2,14 @@ package ru.labore.moderngymnasium.ui.fragments.inbox
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -20,14 +23,12 @@ import org.kodein.di.DIAware
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.network.ClientConnectionException
 import ru.labore.moderngymnasium.data.network.ClientErrorException
-import ru.labore.moderngymnasium.data.repository.AnnouncementsWithCount
 import ru.labore.moderngymnasium.data.repository.AppRepository
 import ru.labore.moderngymnasium.ui.activities.AnnouncementDetailedActivity
 import ru.labore.moderngymnasium.ui.activities.LoginActivity
 import ru.labore.moderngymnasium.ui.activities.MainActivity
-import ru.labore.moderngymnasium.ui.adapters.MainRecyclerViewAdapter
+import ru.labore.moderngymnasium.ui.adapters.InboxRecyclerViewAdapter
 import ru.labore.moderngymnasium.ui.base.ListElementFragment
-import ru.labore.moderngymnasium.ui.base.ScopedFragment
 import java.net.ConnectException
 import kotlin.properties.Delegates
 
@@ -40,9 +41,6 @@ class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementF
     private val viewModel: InboxViewModel by viewModels()
 
     private var loading = true
-    private var overallCount by Delegates.notNull<Int>()
-    private var currentCount = 0
-    private lateinit var viewAdapter: MainRecyclerViewAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -55,27 +53,6 @@ class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementF
         super.onActivityCreated(savedInstanceState)
 
         bindUI(savedInstanceState)
-
-        viewModel.appRepository.unreadAnnouncementsPushListener = {
-            viewAdapter.prependAnnouncement(it)
-
-            requireActivity().let { activity ->
-                if (activity is MainActivity) {
-                    activity.updateInboxBadge(viewModel.appRepository.unreadAnnouncements.size)
-                }
-            }
-        }
-
-        viewAdapter = MainRecyclerViewAdapter(
-            resources,
-            mutableListOf()
-        ) {
-            val intent = Intent(requireContext(), AnnouncementDetailedActivity::class.java)
-            val bundle = Bundle()
-            bundle.putParcelable("announcement", it)
-            intent.putExtras(bundle)
-            startActivity(intent)
-        }
 
         inboxRecyclerView.apply {
             val viewManager = LinearLayoutManager(requireActivity())
@@ -92,7 +69,8 @@ class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementF
             setHasFixedSize(true)
 
             layoutManager = viewManager
-            adapter = viewAdapter
+
+            adapter = viewModel.bindAdapter()
 
             scrollBy(0, savedInstanceState?.getInt("scrollY") ?: 0)
 
@@ -124,8 +102,7 @@ class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementF
                     super.onScrollStateChanged(recyclerView, newState)
 
                     if (
-                        !recyclerView.canScrollVertically(1) &&
-                        currentCount < overallCount
+                        !recyclerView.canScrollVertically(1)
                     ) {
                         addNewAnnouncements()
                     }
@@ -140,13 +117,15 @@ class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementF
         }
     }
 
-    private suspend fun getAnnouncements(
-        offset: Int = currentCount,
-        forceFetch: Boolean = false
-    ): AnnouncementsWithCount =
+    private suspend fun updateAnnouncements(
+        forceFetch: AppRepository.Companion.UpdateParameters =
+            AppRepository.Companion.UpdateParameters.DETERMINE,
+        refresh: Boolean = false
+    ) =
         try {
-            viewModel.getAnnouncements(offset, forceFetch)
+            viewModel.updateAnnouncements(forceFetch, refresh)
         } catch(e: Exception) {
+            println(e.toString())
             val activity = requireActivity()
 
             Toast.makeText(
@@ -159,16 +138,21 @@ class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementF
                             viewModel.appRepository.user = null
                             startActivity(Intent(activity, LoginActivity::class.java))
                             activity.finish()
-                        }
 
-                        getString(R.string.session_timed_out)
+                            getString(R.string.session_timed_out)
+                        } else {
+                            "An unknown error has occurred."
+                        }
                     }
-                    else -> "An unknown error occurred."
+                    else -> "An unknown error has occurred."
                 },
                 Toast.LENGTH_SHORT
             ).show()
 
-            viewModel.getAnnouncements(offset, null)
+            viewModel.updateAnnouncements(
+                AppRepository.Companion.UpdateParameters.DONT_UPDATE,
+                refresh
+            )
         }
 
     private fun addNewAnnouncements() = launch {
@@ -176,11 +160,7 @@ class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementF
             loading = true
             inboxProgressBar.visibility = View.VISIBLE
 
-            val newAnnouncements = getAnnouncements()
-
-            currentCount += newAnnouncements.currentCount
-
-            viewAdapter.pushAnnouncements(newAnnouncements.data)
+            updateAnnouncements()
 
             loading = false
             inboxProgressBar.visibility = View.GONE
@@ -188,27 +168,14 @@ class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementF
     }
 
     private fun refreshUI() = launch {
-        val announcements = getAnnouncements(0, true)
-
-        currentCount = announcements.currentCount
-        overallCount = announcements.overallCount
-
-        viewAdapter.refreshAnnouncements(announcements.data)
+        updateAnnouncements(AppRepository.Companion.UpdateParameters.UPDATE, true)
 
         inboxRefreshLayout.isRefreshing = false
     }
 
     private fun bindUI(savedInstanceState: Bundle?) = launch {
-        val announcements = savedInstanceState?.getParcelable("announcements") ?:
-            getAnnouncements()
-
         val params =
             inboxProgressBar.layoutParams as ConstraintLayout.LayoutParams
-
-        loading = false
-
-        overallCount = announcements.overallCount
-        currentCount = announcements.currentCount
 
         inboxProgressBar.visibility = View.GONE
         inboxProgressBarCaption.visibility = View.GONE
@@ -217,7 +184,9 @@ class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementF
         params.bottomToBottom = R.id.inboxFragmentLayout
         params.bottomMargin = 50
 
-        viewAdapter.pushAnnouncements(announcements.data)
+        if (viewModel.itemCount == 0) {
+            updateAnnouncements()
+        }
 
         inboxRefreshLayout.setOnRefreshListener {
             refreshUI()
@@ -234,17 +203,22 @@ class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementF
                 it.height.toFloat()
             )
         }
+
+        if (viewModel.itemCount == 0) {
+            val textView = LayoutInflater
+                .from(context)
+                .inflate(
+                    R.layout.inbox_no_announcements_textview,
+                    inboxFragmentLayout
+                )
+        }
+
+        loading = false
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putInt("scrollY", inboxRecyclerView.computeVerticalScrollOffset())
-        outState.putParcelable("announcements", AnnouncementsWithCount(
-            overallCount,
-            currentCount,
-            viewAdapter.announcements.toTypedArray()
-        ))
 
-        println("Saving!!!")
         super.onSaveInstanceState(outState)
     }
 

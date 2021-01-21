@@ -29,10 +29,10 @@ module.exports = {
 
       res.throw(400);
     } else {
-      const { limit, skip } = req.query;
+      const { limit = 25, skip = 0 } = req.query;
 
       const roleIds = getPermission(
-        req.user.permissions
+        req.user.permissions,
         ['announcement', 'read']
       );
 
@@ -58,7 +58,7 @@ module.exports = {
       }
 
       announcements = await announcements
-        .orderBy('id', 'desc')
+        .orderBy('announcement.id', 'desc')
         .offset(skip || 0)
         .limit(limit || 10);
 
@@ -83,7 +83,7 @@ module.exports = {
         req.user.roleId
       ))[0]['count(*)'];
 
-    res.send(count);
+    res.send(String(count));
   },
 
   create: async (req, res) => {

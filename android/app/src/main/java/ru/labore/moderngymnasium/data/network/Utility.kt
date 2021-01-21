@@ -12,6 +12,7 @@ import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.data.db.entities.ClassEntity
 import ru.labore.moderngymnasium.data.db.entities.RoleEntity
 import ru.labore.moderngymnasium.data.db.entities.UserEntity
+import ru.labore.moderngymnasium.data.sharedpreferences.entities.AnnounceMap
 import ru.labore.moderngymnasium.data.sharedpreferences.entities.User
 
 class Utility(
@@ -31,9 +32,25 @@ class Utility(
 
         data class CountResponse(val count: Int)
 
+        private interface FetchMe {
+            @GET("users/me")
+            suspend fun fetchMe(
+                @Header("Authentication") jwt: String
+            ): User?
+        }
+
+        private interface FetchMap {
+            @GET("roles/getMine")
+            suspend fun fetchMap(
+                @Header("Authentication") jwt: String
+            ): AnnounceMap
+        }
+
         private interface SignIn {
             @POST("users/signin")
-            suspend fun signIn(@Body body: UserCredentials): User?
+            suspend fun signIn(
+                @Body body: UserCredentials
+            ): User?
         }
 
         private interface CreateAnnouncement {
@@ -64,8 +81,7 @@ class Utility(
             @GET("announcements/getMine")
             suspend fun fetch(
                 @Header("Authentication") jwt: String,
-                @Query("offset") offset: Int,
-                @Query("limit") limit: Int
+                @Query("offset") offset: Int
             ): Array<AnnouncementEntity>
         }
 
@@ -104,10 +120,7 @@ class Utility(
         .addInterceptor(requestInterceptor)
         .build()
 
-    suspend fun signIn(
-        username: String,
-        password: String
-    ): User? = Retrofit
+    private val builder = Retrofit
         .Builder()
         .client(okHttpClient)
         .baseUrl(
@@ -117,6 +130,23 @@ class Utility(
         )
         .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
+
+    suspend fun fetchMe(
+        jwt: String
+    ): User? = builder
+        .create(FetchMe::class.java)
+        .fetchMe(jwt)
+
+    suspend fun fetchAnnouncementMap(
+        jwt: String
+    ): AnnounceMap = builder
+        .create(FetchMap::class.java)
+        .fetchMap(jwt)
+
+    suspend fun signIn(
+        username: String,
+        password: String
+    ): User? = builder
         .create(SignIn::class.java)
         .signIn(UserCredentials(username, password))
 
@@ -124,16 +154,7 @@ class Utility(
         jwt: String,
         text: String,
         recipients: HashMap<Int, MutableList<Int>>
-    ) = Retrofit
-        .Builder()
-        .client(okHttpClient)
-        .baseUrl(
-            context
-                .resources
-                .getString(R.string.api_url)
-        )
-        .addConverterFactory(GsonConverterFactory.create(gson))
-        .build()
+    ) = builder
         .create(CreateAnnouncement::class.java)
         .createAnnouncement(
             jwt,
@@ -143,16 +164,7 @@ class Utility(
     suspend fun pushToken(
         jwt: String,
         token: String
-    ) = Retrofit
-        .Builder()
-        .client(okHttpClient)
-        .baseUrl(
-            context
-                .resources
-                .getString(R.string.api_url)
-        )
-        .addConverterFactory(GsonConverterFactory.create(gson))
-        .build()
+    ) = builder
         .create(PushToken::class.java)
         .pushToken(
             jwt,
@@ -162,16 +174,7 @@ class Utility(
     suspend fun fetchAnnouncement(
         jwt: String,
         id: Int
-    ) = Retrofit
-        .Builder()
-        .client(okHttpClient)
-        .baseUrl(
-            context
-                .resources
-                .getString(R.string.api_url)
-        )
-        .addConverterFactory(GsonConverterFactory.create(gson))
-        .build()
+    ) = builder
         .create(FetchAnnouncement::class.java)
         .fetch(
             jwt,
@@ -180,37 +183,17 @@ class Utility(
 
     suspend fun fetchAnnouncements(
         jwt: String,
-        offset: Int,
-        limit: Int
-    ) = Retrofit
-        .Builder()
-        .client(okHttpClient)
-        .baseUrl(
-            context
-                .resources
-                .getString(R.string.api_url)
-        )
-        .addConverterFactory(GsonConverterFactory.create(gson))
-        .build()
+        offset: Int
+    ) = builder
         .create(FetchAnnouncements::class.java)
         .fetch(
             jwt,
-            offset,
-            limit
+            offset
         )
 
     suspend fun countAnnouncements(
         jwt: String
-    ) = Retrofit
-        .Builder()
-        .client(okHttpClient)
-        .baseUrl(
-            context
-                .resources
-                .getString(R.string.api_url)
-        )
-        .addConverterFactory(GsonConverterFactory.create(gson))
-        .build()
+    ) = builder
         .create(CountAnnouncements::class.java)
         .count(
             jwt
@@ -218,59 +201,25 @@ class Utility(
 
     suspend fun fetchUser(
         id: Int
-    ) = Retrofit
-        .Builder()
-        .client(okHttpClient)
-        .baseUrl(
-            context
-                .resources
-                .getString(R.string.api_url)
-        )
-        .addConverterFactory(GsonConverterFactory.create(gson))
-        .build()
+    ) = builder
         .create(FetchUser::class.java)
         .fetch(id)
 
     suspend fun fetchRole(
         id: Int
-    ) = Retrofit
-        .Builder()
-        .client(okHttpClient)
-        .baseUrl(
-            context
-                .resources
-                .getString(R.string.api_url)
-        )
-        .addConverterFactory(GsonConverterFactory.create(gson))
-        .build()
+    ) = builder
         .create(FetchRole::class.java)
         .fetch(id)
 
-    suspend fun fetchAllRoles(jwt: String) = Retrofit
-        .Builder()
-        .client(okHttpClient)
-        .baseUrl(
-            context
-                .resources
-                .getString(R.string.api_url)
-        )
-        .addConverterFactory(GsonConverterFactory.create(gson))
-        .build()
+    suspend fun fetchAllRoles(
+        jwt: String
+    ) = builder
         .create(FetchAllRoles::class.java)
         .fetch(jwt)
 
     suspend fun fetchClass(
         id: Int
-    ) = Retrofit
-        .Builder()
-        .client(okHttpClient)
-        .baseUrl(
-            context
-                .resources
-                .getString(R.string.api_url)
-        )
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
+    ) = builder
         .create(FetchClass::class.java)
         .fetch(id)
 }
