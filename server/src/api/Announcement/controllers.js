@@ -130,7 +130,10 @@ module.exports = {
           }
         }
 
-        const { recipients } = await mg.knex.transaction(t =>
+        const {
+          announcementId,
+          recipients
+        } = await mg.knex.transaction(t =>
           mg.query('announcement').create({
             text: req.body.text,
             authorId: req.user.id
@@ -152,6 +155,7 @@ module.exports = {
             return t.insert(recipientsArray)
               .into('announcementClassRole')
               .then(() => ({
+                announcementId: announcement[0],
                 recipients: recipientsArray
               }));
           })
@@ -188,8 +192,32 @@ module.exports = {
         }
 
         const tokens = await mg.query('pushOptions').find({
+          userId_in: Array.from(userIds)
+        }, {});
 
-        }, {})
+        const notificationTokens = [];
+
+        for (let i = 0; i < tokens.length; i += 1) {
+          if (tokens[i].gcm) {
+            notificationTokens.push(
+              tokens[i].subscription
+            );
+          }
+        }
+
+        await mg.fbAdmin.messaging()
+          .sendMulticast({
+            data: {
+              text: req.body.text,
+              authorId: String(req.user.id),
+              id: String(announcementId),
+              createdAt: new Date().toISOString()
+            },
+            tokens: notificationTokens
+          })
+          .catch(e => {
+            console.log(e);
+          });
 
         res.status(200).send({});
         return;

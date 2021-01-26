@@ -1,6 +1,10 @@
+const serviceAccount = require(
+  '../../../firebase/modern-gymnasium-firebase-adminsdk-okjez-a1df32b473.json'
+);
+const parsePermissions = require('../../../utils/permissionArrayToObject');
+const admin = require('firebase-admin');
 const webpush = require('web-push');
 const tim = require('timsort');
-const parsePermissions = require('../../../utils/permissionArrayToObject');
 
 function parseAndSort(array) {
   for (let i = 0; i < array.length; i += 1) {
@@ -43,7 +47,13 @@ module.exports = function jacketzip() {
     process.env.VAPID_PRIVATE_KEY
   );
 
-  mg.push = webpush;
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://modern-gymnasium.firebaseio.com"
+  });
+
+  mg.fbAdmin = admin;
+  mg.webpush = webpush;
 
   return updateCache();
 };

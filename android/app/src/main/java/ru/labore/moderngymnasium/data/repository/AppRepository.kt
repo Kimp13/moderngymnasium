@@ -1,6 +1,7 @@
 package ru.labore.moderngymnasium.data.repository
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.MutableLiveData
@@ -92,19 +93,8 @@ class AppRepository(
 
     suspend fun onMainActivityCreated() {
         if (user != null) {
-            val mapString = sharedPreferences.getString("announce_map", null)
-
-            announceMap = if (mapString == null) {
-                AnnounceMap()
-            } else {
-                gson.fromJson(mapString, AnnounceMap::class.java)
-            }
-
             val new = appNetwork.fetchMe(user!!.jwt)
-            val newMap = appNetwork.fetchAnnounceMap(user!!.jwt)
             val editor = sharedPreferences.edit()
-
-            editor.putString("announce_map", gson.toJson(newMap))
 
             if (new != null && user != null) {
                 user = User(user!!.jwt, new.data)
@@ -112,8 +102,27 @@ class AppRepository(
                 editor.putString("user", gson.toJson(user))
             }
 
-            editor.apply()
+            getMap(editor)
         }
+    }
+
+    private suspend fun getMap(
+        editor: SharedPreferences.Editor = sharedPreferences.edit()
+    ) {
+        val mapString = sharedPreferences.getString("announce_map", null)
+
+        announceMap = if (mapString == null) {
+            AnnounceMap()
+        } else {
+            gson.fromJson(mapString, AnnounceMap::class.java)
+        }
+
+        val newMap = appNetwork.fetchAnnounceMap(user!!.jwt)
+
+        announceMap = newMap
+        editor.putString("announce_map", gson.toJson(newMap))
+
+        editor.apply()
     }
 
     fun saveToken(token: String) {
@@ -144,7 +153,8 @@ class AppRepository(
 
         pushToken()
         editor.putString("user", gson.toJson(user))
-        editor.apply()
+
+        getMap(editor)
     }
 
     suspend fun createAnnouncement(
@@ -203,7 +213,7 @@ class AppRepository(
             }
         }
 
-        if (forceFetch != UpdateParameters.DONT_UPDATE) {
+        if (forceFetch != UpdateParameters.DONT_UPDATE && usersToUpdate.isNotEmpty()) {
             val fetchedUsers = appNetwork.fetchUsers(usersToUpdate.toTypedArray())
 
             fetchedUsers.forEach {
@@ -404,45 +414,40 @@ class AppRepository(
     }
 
     fun pushNewAnnouncement(map: Map<String, String>, notify: Boolean = true) {
-        if (
-            map["id"] != null &&
-            map["text"] != null &&
-            map["created_at"] != null &&
-            map["author_id"] != null
-        ) {
-            GlobalScope.launch {
-                val entity =  AnnouncementEntity(
-                    (map["id"] ?: error("")).toInt(),
-                    (map["author_id"] ?: error("")).toInt(),
-                    map["text"] ?: error(""),
-                    ZonedDateTime.parse(map["created_at"])
-                )
+        GlobalScope.launch {
+            val entity = AnnouncementEntity(
+                (map["id"] ?: error("")).toInt(),
+                (map["authorId"] ?: error("")).toInt(),
+                map["text"] ?: error(""),
+                ZonedDateTime.parse(map["createdAt"])
+            )
 
-                populateAnnouncementEntity(entity)
+            populateAnnouncementEntity(entity)
 
-                persistFetchedAnnouncement(entity)
+            persistFetchedAnnouncement(entity)
 
-                unreadAnnouncements.add(0, entity)
-                unreadAnnouncementsPushListener?.invoke(entity)
+            unreadAnnouncements.add(0, entity)
+            unreadAnnouncementsPushListener?.invoke(entity)
 
-                if (notify && !isAppForeground) {
-                    notificationBuilder
-                        .setContentTitle(announcementEntityToCaption(
+            if (notify && !isAppForeground) {
+                notificationBuilder
+                    .setContentTitle(
+                        announcementEntityToCaption(
                             entity,
                             context.getString(R.string.author_no_name)
-                        ))
-                        .setContentText(entity.text)
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
-                        .setAutoCancel(true)
-
-                    try {
-                        NotificationManagerCompat.from(context).notify(
-                            entity.id,
-                            notificationBuilder.build()
                         )
-                    } catch(e: Exception) {
-                        println(e.message)
-                    }
+                    )
+                    .setContentText(entity.text)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true)
+
+                try {
+                    NotificationManagerCompat.from(context).notify(
+                        entity.id,
+                        notificationBuilder.build()
+                    )
+                } catch (e: Exception) {
+                    println(e.message)
                 }
             }
         }

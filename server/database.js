@@ -301,8 +301,10 @@ class KnexManageModel {
   delete(args = {}) {
     return (
       this.prepareArgs(args)
-        .then(args => this.parseArgs(this.knex(this.specs.tableName), args))
-        .del()
+        .then(args => this.parseArgs(
+          this.del().from(this.specs.tableName),
+          args
+        ))
         .then(result => result)
     );
   }

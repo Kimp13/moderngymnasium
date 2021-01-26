@@ -68,10 +68,7 @@ class InboxRecyclerViewAdapter(
 
     override fun getItemViewType(position: Int): Int =
         when (position) {
-            CREATE_VIEW_POSITION -> {
-                println("Getting view type!")
-                CREATE_VIEW_POSITION
-            }
+            CREATE_VIEW_POSITION -> CREATE_VIEW_POSITION
             else -> ANNOUNCEMENT_VIEW_POSITION
         }
 
@@ -188,8 +185,6 @@ class InboxRecyclerViewAdapter(
         val positionStart = itemCount
 
         announcements.addAll(newAnnouncements)
-
-        println(announcements.toString())
 
         notifyItemRangeInserted(
             positionStart + additionalItems,
