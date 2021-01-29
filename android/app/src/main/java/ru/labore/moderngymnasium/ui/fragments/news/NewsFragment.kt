@@ -11,10 +11,9 @@ import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.ui.base.ListElementFragment
 import ru.labore.moderngymnasium.ui.fragments.news.NewsViewModel
 
-class NewsFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementFragment(
-    push,
-    finish
-) {
+class NewsFragment(
+    controls: Companion.ListElementFragmentControls
+) : ListElementFragment(controls) {
     override val viewModel: NewsViewModel by viewModels()
 
     override fun onCreateView(

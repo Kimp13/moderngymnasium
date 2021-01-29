@@ -10,10 +10,9 @@ import androidx.fragment.app.viewModels
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.ui.base.ListElementFragment
 
-class ProfileFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementFragment(
-    push,
-    finish
-) {
+class ProfileFragment(
+    controls: Companion.ListElementFragmentControls
+) : ListElementFragment(controls) {
     override val viewModel: ProfileViewModel by viewModels()
 
     override fun onCreateView(

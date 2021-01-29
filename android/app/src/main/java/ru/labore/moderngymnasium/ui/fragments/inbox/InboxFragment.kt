@@ -18,10 +18,9 @@ import ru.labore.moderngymnasium.data.repository.AppRepository
 import ru.labore.moderngymnasium.ui.activities.MainActivity
 import ru.labore.moderngymnasium.ui.base.ListElementFragment
 
-class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementFragment(
-    push,
-    finish
-) {
+class InboxFragment(
+    controls: Companion.ListElementFragmentControls
+) : ListElementFragment(controls) {
     override val viewModel: InboxViewModel by viewModels()
     private var noAnnouncementsTextView: View? = null
     private var loading = true
@@ -54,7 +53,7 @@ class InboxFragment(push: (Fragment) -> Unit, finish: () -> Unit) : ListElementF
 
             layoutManager = viewManager
 
-            adapter = viewModel.bindAdapter()
+            adapter = viewModel.bindAdapter(controls)
 
             scrollBy(0, savedInstanceState?.getInt("scrollY") ?: 0)
 

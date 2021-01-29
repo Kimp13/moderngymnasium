@@ -1,41 +1,67 @@
-package ru.labore.moderngymnasium.ui.activities
+package ru.labore.moderngymnasium.ui.fragments.create
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
-import kotlinx.android.synthetic.main.activity_create.*
+import androidx.fragment.app.viewModels
+import kotlinx.android.synthetic.main.fragment_create.*
 import kotlinx.coroutines.launch
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.db.entities.ClassEntity
 import ru.labore.moderngymnasium.data.db.entities.RoleEntity
-import ru.labore.moderngymnasium.ui.base.BaseActivity
+import ru.labore.moderngymnasium.ui.base.ListElementFragment
 import ru.labore.moderngymnasium.ui.views.LabelledCheckbox
 import ru.labore.moderngymnasium.ui.views.ParentCheckbox
 import ru.labore.moderngymnasium.utils.hideKeyboard
-import java.util.*
 
-class CreateActivity: BaseActivity() {
-    private val checkedRoles: HashMap<Int, HashSet<Int>> = hashMapOf()
+class CreateFragment(
+    controls: ListElementFragment.Companion.ListElementFragmentControls
+) : ListElementFragment(controls) {
+    override val viewModel: CreateViewModel by viewModels()
     private var uiLoaded = false
+    private var lastScroll = 0
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_create)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_create, container, false)
+    }
 
-        createFragmentLayout.setOnClickListener { hideKeyboard() }
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+
+        createFragmentScrollView
+            .viewTreeObserver
+            .addOnScrollChangedListener {
+                val scroll = createFragmentScrollView.scrollY
+                val difference = scroll - lastScroll
+
+                if (difference > 0)
+                    controls.hideBottomNav()
+                else if (difference < 0)
+                    controls.showBottomNav()
+
+                lastScroll = scroll
+            }
+
+        createFragmentRootLayout.setOnClickListener { hideKeyboard() }
         createAnnouncementRoleChoose.setOnClickListener { hideKeyboard() }
         createAnnouncementSubmitButton.setOnClickListener { createAnnouncement() }
         createAnnouncementBackButton.setOnClickListener {
-            finish()
+            controls.finish()
         }
 
         loadUI()
     }
 
     private fun createAnnouncement() {
-        if (checkedRoles.keys.size == 0) {
+        if (viewModel.checkedRoles.keys.size == 0) {
             Toast.makeText(
-                this,
+                activity,
                 getString(R.string.choose_recipient_role),
                 Toast.LENGTH_SHORT
             ).show()
@@ -47,37 +73,34 @@ class CreateActivity: BaseActivity() {
 
             if (text.isEmpty()) {
                 Toast.makeText(
-                    this,
+                    activity,
                     getString(R.string.enter_announcement_text),
                     Toast.LENGTH_SHORT
                 ).show()
-            } else launch {
-                try {
-                    createAnnouncementSubmitButton.visibility = View.GONE
-                    createAnnouncementSubmitProgress.visibility = View.VISIBLE
+            } else makeRequest({
+                createAnnouncementSubmitButton.visibility = View.GONE
+                createAnnouncementSubmitProgress.visibility = View.VISIBLE
 
-                    repository.createAnnouncement(text, checkedRoles)
+                viewModel.createAnnouncement(text)
 
-                    createAnnouncementEditText.setText("")
-                } catch (e: Exception) {
-                }
+                createAnnouncementEditText.setText("")
 
                 createAnnouncementSubmitButton.visibility = View.VISIBLE
                 createAnnouncementSubmitProgress.visibility = View.GONE
-            }
+            })
         }
     }
 
     private fun childCheckedChangeHandler(isChecked: Boolean, roleId: Int, classId: Int) {
-        if (!checkedRoles.containsKey(roleId))
-            checkedRoles[roleId] = hashSetOf()
+        if (!viewModel.checkedRoles.containsKey(roleId))
+            viewModel.checkedRoles[roleId] = hashSetOf()
 
         if (isChecked)
-            checkedRoles[roleId]!!.add(classId)
+            viewModel.checkedRoles[roleId]!!.add(classId)
         else
-            checkedRoles[roleId]!!.remove(classId)
+            viewModel.checkedRoles[roleId]!!.remove(classId)
 
-        println(checkedRoles.toString())
+        println(viewModel.checkedRoles.toString())
     }
 
     private fun loadUI() = launch {
@@ -85,25 +108,22 @@ class CreateActivity: BaseActivity() {
         var classes = HashMap<Int, ClassEntity>()
 
         makeRequest({
-            roles = repository.getKeyedRoles(
-                repository.announceMap.rolesIds
-            )
+            roles = viewModel.getRoles()
 
-            classes = repository.getKeyedClasses(
-                repository.announceMap.classesIds
-            )
+            classes = viewModel.getClasses()
         }).join()
 
-        repository.announceMap.entries.forEach { roleMap ->
+        viewModel.appRepository.announceMap.entries.forEach { roleMap ->
             val role = roles[roleMap.key]
             val checkboxLayout: View
+            val context = context
 
-            if (role != null) {
+            if (role != null && context != null) {
                 if (roleMap.value.size == 1) {
                     val onlyClass = classes[roleMap.value[0]]!!
 
                     checkboxLayout = LabelledCheckbox(
-                        this@CreateActivity,
+                        context,
                         "${role.name}, ${
                             onlyClass.grade
                         }${
@@ -134,7 +154,7 @@ class CreateActivity: BaseActivity() {
                     }
 
                     checkboxLayout = ParentCheckbox(
-                        this@CreateActivity,
+                        context,
                         "Роль: ${role.name}"
                     )
 
@@ -145,7 +165,7 @@ class CreateActivity: BaseActivity() {
                             val onlyClass = classes[it.value[0]]!!
 
                             childCheckbox = LabelledCheckbox(
-                                this@CreateActivity,
+                                context,
                                 "${
                                     onlyClass.grade
                                 }${
@@ -162,13 +182,13 @@ class CreateActivity: BaseActivity() {
                             }
                         } else {
                             childCheckbox = ParentCheckbox(
-                                this@CreateActivity,
+                                context,
                                 "${it.key}-я параллель"
                             )
 
                             it.value.forEach { classId ->
                                 val leafCheckbox = LabelledCheckbox(
-                                    this@CreateActivity,
+                                    context,
                                     "${classes[classId]!!.letter} класс"
                                 )
 

@@ -37,11 +37,6 @@
             android:windowSoftInputMode="stateVisible|adjustResize" />
 
         <activity
-            android:name=".ui.activities.CreateActivity"
-            android:theme="@style/AppThemeWithoutActionBar"
-            android:windowSoftInputMode="adjustResize" />
-
-        <activity
             android:name=".ui.activities.MainActivity"
             android:theme="@style/AppThemeWithoutActionBar"
             android:windowSoftInputMode="adjustResize">
@@ -51,9 +46,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity android:name=".ui.activities.AnnouncementDetailedActivity"
-            android:theme="@style/AppThemeWithActionBar" />
     </application>
 
 </manifest>

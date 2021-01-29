@@ -1,49 +1,23 @@
 package ru.labore.moderngymnasium.ui.fragments.inbox
 
 import android.app.Application
-import android.content.Intent
-import android.os.Bundle
-import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.data.repository.AppRepository
-import ru.labore.moderngymnasium.ui.activities.AnnouncementDetailedActivity
-import ru.labore.moderngymnasium.ui.activities.CreateActivity
 import ru.labore.moderngymnasium.ui.adapters.InboxRecyclerViewAdapter
 import ru.labore.moderngymnasium.ui.base.BaseViewModel
+import ru.labore.moderngymnasium.ui.base.ListElementFragment
+import ru.labore.moderngymnasium.ui.fragments.create.CreateFragment
+import ru.labore.moderngymnasium.ui.fragments.detailedAnnouncement.DetailedAnnouncementFragment
 
 class InboxViewModel(
     application: Application
 ) : BaseViewModel(application) {
-    private val viewAdapter = InboxRecyclerViewAdapter(
-        application.resources,
-        {
-            val intent = Intent(
-                application.applicationContext,
-                CreateActivity::class.java
-            )
-
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-
-            application.startActivity(intent)
-        },
-        {
-            val intent = Intent(
-                application.applicationContext,
-                AnnouncementDetailedActivity::class.java
-            )
-            val bundle = Bundle()
-
-            bundle.putParcelable("announcement", it)
-            intent.putExtras(bundle)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-
-            application.startActivity(intent)
-        }
-    )
+    private lateinit var viewAdapter: InboxRecyclerViewAdapter
     val itemCount
         get() = viewAdapter.announcements.size
 
 
     private var reachedEnd = false
+    private var adapterBinded = false
 
     init {
         appRepository.unreadAnnouncementsPushListener = {
@@ -51,7 +25,25 @@ class InboxViewModel(
         }
     }
 
-    fun bindAdapter(): InboxRecyclerViewAdapter = viewAdapter
+    fun bindAdapter(
+        controls: ListElementFragment.Companion.ListElementFragmentControls
+    ): InboxRecyclerViewAdapter {
+        if (!adapterBinded) {
+            val application = getApplication<Application>()
+
+            viewAdapter = InboxRecyclerViewAdapter(
+                application.resources,
+                {
+                    controls.push(CreateFragment(controls))
+                },
+                {
+                    controls.push(DetailedAnnouncementFragment(controls, it))
+                }
+            )
+        }
+
+        return viewAdapter
+    }
 
     suspend fun updateAnnouncements(
         forceFetch: AppRepository.Companion.UpdateParameters =

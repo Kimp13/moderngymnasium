@@ -20,6 +20,7 @@ import ru.labore.moderngymnasium.data.network.ClientConnectionException
 import ru.labore.moderngymnasium.data.network.ClientErrorException
 import ru.labore.moderngymnasium.data.repository.AppRepository
 import ru.labore.moderngymnasium.ui.base.BaseActivity
+import ru.labore.moderngymnasium.ui.base.ListElementFragment
 import ru.labore.moderngymnasium.ui.fragments.inbox.InboxFragment
 import ru.labore.moderngymnasium.ui.fragments.news.NewsFragment
 import ru.labore.moderngymnasium.ui.fragments.profile.ProfileFragment
@@ -27,13 +28,30 @@ import java.net.ConnectException
 
 class MainActivity : BaseActivity() {
     private val rootFragments = arrayOf<Fragment>(
-        NewsFragment(pushFragment(0), dropFragment(0)),
-        InboxFragment(pushFragment(1), dropFragment(1)),
-        ProfileFragment(pushFragment(2), dropFragment(2))
+        NewsFragment(ListElementFragment.Companion.ListElementFragmentControls(
+            pushFragment(0),
+            dropFragment(0),
+            { showBottomNav() },
+            { hideBottomNav() }
+        )),
+        InboxFragment(ListElementFragment.Companion.ListElementFragmentControls(
+            pushFragment(1),
+            dropFragment(1),
+            { showBottomNav() },
+            { hideBottomNav() }
+        )),
+        ProfileFragment(ListElementFragment.Companion.ListElementFragmentControls(
+            pushFragment(2),
+            dropFragment(2),
+            { showBottomNav() },
+            { hideBottomNav() }
+        ))
     )
 
     private var inboxBadge: BadgeDrawable? = null
     private val menuItemIdToIndex = HashMap<Int, Int>()
+    private val animator = ObjectAnimator()
+    private var hidden = false
     private val fragments = Array<ArrayList<Fragment>>(rootFragments.size) {
         arrayListOf(rootFragments[it])
     }
@@ -41,6 +59,10 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        animator.target = bottomNav
+        animator.duration = 400
+        animator.setPropertyName("translationY")
 
         if (repository.user == null) {
             startActivity(Intent(this, LoginActivity::class.java))
@@ -59,49 +81,6 @@ class MainActivity : BaseActivity() {
             }
 
             bottomNav.setOnNavigationItemReselectedListener {
-                val displayHeight =
-                    if (
-                        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R
-                    ) {
-                        windowManager.currentWindowMetrics.bounds.height()
-                    } else {
-                        var metrics: DisplayMetrics = DisplayMetrics()
-
-                        windowManager.defaultDisplay.getMetrics(metrics)
-
-                        metrics.heightPixels
-                    }
-
-                val out = TypedValue()
-                resources.getValue(R.dimen.bottom_nav_vertical_bias, out, true)
-
-                val yDelta = (1 - out.float) * displayHeight * 3;
-
-                val animator = ObjectAnimator.ofFloat(
-                    bottomNav,
-                    "translationY",
-                    0F,
-                    yDelta
-                )
-                animator.duration = 400;
-                animator.start()
-
-                launch {
-                    delay(1000)
-
-                    val multiplier = if (animator.isRunning) {
-                        animator.currentPlayTime.toFloat() / animator.duration.toFloat()
-                    } else {
-                        1F
-                    }
-
-                    animator.end()
-
-                    animator.setFloatValues(yDelta * multiplier, 0F)
-
-                    animator.start()
-                }
-
                 setRootFragment(it)
             }
 
@@ -156,10 +135,12 @@ class MainActivity : BaseActivity() {
 
     private fun dropFragment(index: Int): () -> Unit = {
         fragments[index].removeLast()
+        loadFragment(index)
     }
 
     private fun pushFragment(index: Int): (Fragment) -> Unit = {
         fragments[index].add(it)
+        loadFragment(index)
     }
 
     private fun loadFragment(index: Int) {
@@ -194,5 +175,78 @@ class MainActivity : BaseActivity() {
         }
 
         return false
+    }
+
+    private fun showBottomNav() {
+        if (hidden) {
+            hidden = false
+
+            val displayHeight =
+                if (
+                    android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R
+                ) {
+                    windowManager.currentWindowMetrics.bounds.height()
+                } else {
+                    val metrics: DisplayMetrics = DisplayMetrics()
+
+                    windowManager.defaultDisplay.getMetrics(metrics)
+
+                    metrics.heightPixels
+                }
+
+            val out = TypedValue()
+            resources.getValue(R.dimen.bottom_nav_vertical_bias, out, true)
+
+            val yDelta = (1 - out.float) * displayHeight * 3;
+            val multiplier: Float
+
+            if (animator.isRunning) {
+                multiplier =
+                    animator.currentPlayTime.toFloat() / animator.duration.toFloat()
+
+                animator.end()
+            } else {
+                multiplier = 1f
+            }
+
+            animator.setFloatValues(yDelta * multiplier, 0F)
+            animator.start()
+        }
+    }
+
+    private fun hideBottomNav() {
+        if (!hidden) {
+            hidden = true
+            val displayHeight =
+                if (
+                    android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R
+                ) {
+                    windowManager.currentWindowMetrics.bounds.height()
+                } else {
+                    var metrics: DisplayMetrics = DisplayMetrics()
+
+                    windowManager.defaultDisplay.getMetrics(metrics)
+
+                    metrics.heightPixels
+                }
+
+            val out = TypedValue()
+            resources.getValue(R.dimen.bottom_nav_vertical_bias, out, true)
+
+            val yDelta = (1 - out.float) * displayHeight * 3;
+            val multiplier: Float
+
+            if (animator.isRunning) {
+                multiplier =
+                    animator.currentPlayTime.toFloat() / animator.duration.toFloat()
+
+                animator.end()
+            } else {
+                multiplier = 1f
+            }
+
+            animator.setFloatValues(yDelta - (yDelta * multiplier), yDelta)
+            animator.start()
+        }
     }
 }
