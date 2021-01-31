@@ -37,15 +37,19 @@ class CreateFragment(
         createFragmentScrollView
             .viewTreeObserver
             .addOnScrollChangedListener {
-                val scroll = createFragmentScrollView.scrollY
-                val difference = scroll - lastScroll
+                val scrollView = createFragmentScrollView
 
-                if (difference > 0)
-                    controls.hideBottomNav()
-                else if (difference < 0)
-                    controls.showBottomNav()
+                if (scrollView != null) {
+                    val scroll = createFragmentScrollView.scrollY
+                    val difference = scroll - lastScroll
 
-                lastScroll = scroll
+                    if (difference > 0)
+                        controls.hideBottomNav()
+                    else if (difference < 0)
+                        controls.showBottomNav()
+
+                    lastScroll = scroll
+                }
             }
 
         createFragmentRootLayout.setOnClickListener { hideKeyboard() }

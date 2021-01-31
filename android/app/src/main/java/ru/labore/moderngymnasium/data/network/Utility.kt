@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.gson.Gson
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import org.threeten.bp.ZonedDateTime
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
@@ -81,7 +82,7 @@ class Utility(
             @GET("announcements/getMine")
             suspend fun fetch(
                 @Header("Authentication") jwt: String,
-                @Query("offset") offset: Int
+                @Query("offset") offset: ZonedDateTime
             ): Array<AnnouncementEntity>
         }
 
@@ -199,7 +200,7 @@ class Utility(
 
     suspend fun fetchAnnouncements(
         jwt: String,
-        offset: Int
+        offset: ZonedDateTime
     ) = builder
         .create(FetchAnnouncements::class.java)
         .fetch(

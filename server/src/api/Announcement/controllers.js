@@ -2,8 +2,32 @@ import getPermission from 'getPermission';
 import { sort } from 'timsort';
 import search from 'binary-search';
 
-module.exports = {
+function parseDate(dateString) {
+  if (dateString.length >= 24) {
+    const date = new Date(
+      parseInt(dateString.substring(0, 4), 10),
+      parseInt(dateString.substring(5, 7), 10),
+      parseInt(dateString.substring(8, 10), 10),
+      parseInt(dateString.substring(11, 13), 10),
+      parseInt(dateString.substring(14, 16), 10),
+      parseInt(dateString.substring(17, 19), 10),
+      parseInt(dateString.substring(20, 23), 10)
+    );
+
+    if (isNaN(date.getTime())) {
+      return false;
+    } else {
+      return date;
+    }
+  }
+
+  return false;
+}
+
+export default {
   find: async (req, res) => {
+    console.log(req.query.offset);
+
     if (req.query.id) {
       const id = parseInt(req.query.id, 10);
 
@@ -28,43 +52,56 @@ module.exports = {
       }
 
       res.throw(400);
-    } else {
-      const { limit = 25, skip = 0 } = req.query;
+    } else if (typeof req.query.offset === 'string') {
+      const offset = parseDate(req.query.offset);
 
-      const roleIds = getPermission(
-        req.user.permissions,
-        ['announcement', 'read']
-      );
-
-      let announcements = mg.knex
-        .select('announcement.*')
-        .from('announcement')
-        .innerJoin(
-          'announcementClassRole',
-          'announcementClassRole.announcementId',
-          'announcement.id'
-        )
-        .where(
-          'announcementClassRole.classId',
-          req.user.classId
+      if (offset) {
+        const roleIds = getPermission(
+          req.user.permissions,
+          ['announcement', 'read']
         );
 
-      if (Array.isArray(roleIds)) {
-        announcements = announcements.andWhereIn(
-          'announcementClassRole.roleId',
-          roleIds.map(id => parseInt(id, 10))
-        );
-      } else if (roleIds === false) {
-        res.statusCode = 200;
-        res.end('[]');
+        if (roleIds === false) {
+          res.send('[]');
+          return;
+        }
+
+        let announcements = mg.knex
+          .select('announcement.*')
+          .from('announcement')
+          .innerJoin(
+            'announcementClassRole',
+            'announcementClassRole.announcementId',
+            'announcement.id'
+          )
+          .where(
+            'announcementClassRole.classId',
+            req.user.classId
+          );
+
+        if (Array.isArray(roleIds)) {
+          for (let i = 0; i < roleIds.length; i += 1) {
+            roleIds[i] = parseInt(roleIds[i], 10);
+          }
+
+          announcements = announcements.andWhereIn(
+            'announcementClassRole.roleId',
+            roleIds
+          );
+        }
+
+        announcements = await announcements
+          .andWhere(
+            'announcement.createdAt',
+            '<',
+            offset
+          )
+          .orderBy('announcement.createdAt', 'desc');
+
+        res.send(announcements);
+      } else {
+        res.throw(400);
       }
-
-      announcements = await announcements
-        .orderBy('announcement.id', 'desc')
-        .offset(skip)
-        .limit(limit);
-
-      res.send(announcements);
     }
   },
 

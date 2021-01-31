@@ -13,7 +13,6 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.LabelVisibilityMode
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.network.ClientConnectionException
@@ -23,7 +22,6 @@ import ru.labore.moderngymnasium.ui.base.BaseActivity
 import ru.labore.moderngymnasium.ui.base.ListElementFragment
 import ru.labore.moderngymnasium.ui.fragments.inbox.InboxFragment
 import ru.labore.moderngymnasium.ui.fragments.news.NewsFragment
-import ru.labore.moderngymnasium.ui.fragments.profile.ProfileFragment
 import java.net.ConnectException
 
 class MainActivity : BaseActivity() {
@@ -37,12 +35,6 @@ class MainActivity : BaseActivity() {
         InboxFragment(ListElementFragment.Companion.ListElementFragmentControls(
             pushFragment(1),
             dropFragment(1),
-            { showBottomNav() },
-            { hideBottomNav() }
-        )),
-        ProfileFragment(ListElementFragment.Companion.ListElementFragmentControls(
-            pushFragment(2),
-            dropFragment(2),
             { showBottomNav() },
             { hideBottomNav() }
         ))

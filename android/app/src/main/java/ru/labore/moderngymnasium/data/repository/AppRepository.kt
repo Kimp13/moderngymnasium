@@ -7,6 +7,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.MutableLiveData
 import com.google.gson.Gson
 import kotlinx.coroutines.*
+import org.threeten.bp.Instant
+import org.threeten.bp.ZoneId
 import org.threeten.bp.ZonedDateTime
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.db.daos.AnnouncementEntityDao
@@ -90,6 +92,8 @@ class AppRepository(
             persistFetchedClass(it)
         }
     }
+
+    fun now() = ZonedDateTime.now(ZoneId.of("UTC"))
 
     suspend fun onMainActivityCreated() {
         if (user != null) {
@@ -186,7 +190,7 @@ class AppRepository(
         entities: Array<AnnouncementEntity>,
         forceFetch: UpdateParameters = UpdateParameters.DETERMINE
     ) {
-        val now = ZonedDateTime.now()
+        val now = now()
         val roles = HashMap<Int, RoleEntity>()
         val classes = HashMap<Int, ClassEntity>()
         val users = HashMap<Int, UserEntity>()
@@ -323,7 +327,7 @@ class AppRepository(
                 null
             }
         } else {
-            val oneDayBefore = ZonedDateTime.now().minusDays(1)
+            val oneDayBefore = now().minusDays(1)
             if (forceFetch == UpdateParameters.UPDATE) {
                 entity.author = userEntityDao
                     .getUser(entity.authorId)
@@ -348,7 +352,7 @@ class AppRepository(
             }
 
             if (entity.author != null) {
-                val weekBefore = ZonedDateTime.now().minusWeeks(1)
+                val weekBefore = now().minusWeeks(1)
 
                 if (entity.author!!.roleId != null) {
                     if (forceFetch == UpdateParameters.DETERMINE) {
@@ -419,7 +423,8 @@ class AppRepository(
                 (map["id"] ?: error("")).toInt(),
                 (map["authorId"] ?: error("")).toInt(),
                 map["text"] ?: error(""),
-                ZonedDateTime.parse(map["createdAt"])
+                ZonedDateTime.parse(map["createdAt"]),
+                now()
             )
 
             populateAnnouncementEntity(entity)
@@ -459,7 +464,7 @@ class AppRepository(
         }
 
         var announcement: AnnouncementEntity? = announcementEntityDao.getAnnouncement(id)
-        val now: ZonedDateTime = ZonedDateTime.now()
+        val now: ZonedDateTime = now()
         val tenMinutesBefore = now.minusMinutes(10)
 
         if (
@@ -477,7 +482,7 @@ class AppRepository(
     }
 
     suspend fun getAnnouncements(
-        offset: Int = 0,
+        offset: ZonedDateTime = now(),
         forceFetch: UpdateParameters = UpdateParameters.DETERMINE
     ): Array<AnnouncementEntity> {
         val announcements: Array<AnnouncementEntity>
@@ -491,11 +496,11 @@ class AppRepository(
             UpdateParameters.DETERMINE -> {
                 val announcement: AnnouncementEntity? =
                     announcementEntityDao.getAnnouncementAtOffset(offset)
-                val now: ZonedDateTime = ZonedDateTime.now()
+                val now: ZonedDateTime = now()
                 val tenMinutesBefore = now.minusMinutes(10)
 
-                announcement?.updatedAt?.isAfter(now) != false ||
-                        announcement.updatedAt!!.isBefore(tenMinutesBefore)
+                announcement?.createdAt?.isAfter(now) != false ||
+                        announcement.createdAt!!.isBefore(tenMinutesBefore)
             }
             UpdateParameters.DONT_UPDATE -> false
         }
@@ -518,7 +523,7 @@ class AppRepository(
 
     private suspend fun getRoles(rolesIds: Array<Int>): Array<RoleEntity?> {
         val result: Array<RoleEntity?> = arrayOfNulls(rolesIds.size)
-        val now = ZonedDateTime.now()
+        val now = now()
         val roleIdsToFetch = arrayListOf<Pair<Int, Int>>()
 
         List(rolesIds.size) {
@@ -553,7 +558,7 @@ class AppRepository(
 
     private suspend fun getClasses(classesIds: Array<Int>): Array<ClassEntity?> {
         val result: Array<ClassEntity?> = arrayOfNulls(classesIds.size)
-        val now = ZonedDateTime.now()
+        val now = now()
         val classIdsToFetch = arrayListOf<Pair<Int, Int>>()
 
         List(classesIds.size) {
@@ -615,7 +620,7 @@ class AppRepository(
     private suspend fun persistFetchedAnnouncement(
         fetchedAnnouncement: AnnouncementEntity
     ) {
-        fetchedAnnouncement.updatedAt = ZonedDateTime.now()
+        fetchedAnnouncement.updatedAt = now()
 
         announcementEntityDao.upsert(fetchedAnnouncement)
     }
@@ -623,7 +628,7 @@ class AppRepository(
     private fun persistFetchedAnnouncements(
         fetchedAnnouncements: Array<AnnouncementEntity>
     ) {
-        val now = ZonedDateTime.now()
+        val now = now()
 
         fetchedAnnouncements.forEach {
             it.updatedAt = now
@@ -635,7 +640,7 @@ class AppRepository(
     }
 
     private fun persistFetchedUser(fetchedUser: UserEntity) {
-        fetchedUser.updatedAt = ZonedDateTime.now()
+        fetchedUser.updatedAt = now()
 
         GlobalScope.launch(Dispatchers.IO) {
             userEntityDao.upsert(fetchedUser)
@@ -643,7 +648,7 @@ class AppRepository(
     }
 
     private fun persistFetchedUsers(fetchedUsers: Array<UserEntity>) {
-        val now = ZonedDateTime.now()
+        val now = now()
 
         fetchedUsers.forEach {
             it.updatedAt = now
@@ -655,7 +660,7 @@ class AppRepository(
     }
 
     private fun persistFetchedRole(fetchedRole: RoleEntity) {
-        fetchedRole.updatedAt = ZonedDateTime.now()
+        fetchedRole.updatedAt = now()
 
         GlobalScope.launch(Dispatchers.IO) {
             roleEntityDao.upsert(fetchedRole)
@@ -663,7 +668,7 @@ class AppRepository(
     }
 
     private fun persistFetchedRoles(fetchedRoles: Array<RoleEntity>) {
-        val now = ZonedDateTime.now()
+        val now = now()
 
         fetchedRoles.forEach {
             it.updatedAt = now
@@ -675,7 +680,7 @@ class AppRepository(
     }
 
     private fun persistFetchedClass(fetchedClass: ClassEntity) {
-        fetchedClass.updatedAt = ZonedDateTime.now()
+        fetchedClass.updatedAt = now()
 
         GlobalScope.launch(Dispatchers.IO) {
             classEntityDao.upsert(fetchedClass)
@@ -683,7 +688,7 @@ class AppRepository(
     }
 
     private fun persistFetchedClasses(fetchedClasses: Array<ClassEntity>) {
-        val now = ZonedDateTime.now()
+        val now = now()
 
         fetchedClasses.forEach {
             it.updatedAt = now

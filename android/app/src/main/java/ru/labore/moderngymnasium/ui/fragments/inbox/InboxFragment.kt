@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -53,7 +52,7 @@ class InboxFragment(
 
             layoutManager = viewManager
 
-            adapter = viewModel.bindAdapter(controls)
+            adapter = viewModel.getAdapter(controls)
 
             scrollBy(0, savedInstanceState?.getInt("scrollY") ?: 0)
 

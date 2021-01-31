@@ -15,10 +15,10 @@ class AnnouncementEntity(
 
     val authorId: Int,
     val text: String,
-    var createdAt: ZonedDateTime? = null,
+    var createdAt: ZonedDateTime,
 
-    var updatedAt: ZonedDateTime? = null
-): Parcelable {
+    var updatedAt: ZonedDateTime
+) {
     @Ignore
     var author: UserEntity? = null
 
@@ -27,50 +27,4 @@ class AnnouncementEntity(
 
     @Ignore
     var authorClass: ClassEntity? = null
-
-    constructor(parcel: Parcel) : this(
-        parcel.readInt(),
-        parcel.readInt(),
-        parcel.readString() ?: "Empty text"
-    ) {
-        try {
-            createdAt = ZonedDateTime.parse(parcel.readString())
-        } catch(e: Exception) {}
-
-        updatedAt = try {
-            ZonedDateTime.parse(parcel.readString())
-        } catch(e: Exception) {
-            ZonedDateTime.now()
-        }
-
-        author = parcel.readParcelable(UserEntity::class.java.classLoader)
-        authorRole = parcel.readParcelable(RoleEntity::class.java.classLoader)
-        authorClass = parcel.readParcelable(ClassEntity::class.java.classLoader)
-    }
-
-    override fun describeContents(): Int {
-        return 0
-    }
-
-    override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeInt(id)
-        parcel.writeInt(authorId)
-        parcel.writeString(text)
-        parcel.writeString(createdAt.toString())
-        parcel.writeString(updatedAt.toString())
-        parcel.writeParcelable(author, flags)
-        parcel.writeParcelable(authorRole, flags)
-        parcel.writeParcelable(authorClass, flags)
-
-    }
-
-    companion object CREATOR : Parcelable.Creator<AnnouncementEntity> {
-        override fun createFromParcel(parcel: Parcel): AnnouncementEntity {
-            return AnnouncementEntity(parcel)
-        }
-
-        override fun newArray(size: Int): Array<AnnouncementEntity?> {
-            return arrayOfNulls(size)
-        }
-    }
 }

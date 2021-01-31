@@ -1,6 +1,8 @@
 package ru.labore.moderngymnasium.ui.fragments.inbox
 
 import android.app.Application
+import org.threeten.bp.ZonedDateTime
+import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.data.repository.AppRepository
 import ru.labore.moderngymnasium.ui.adapters.InboxRecyclerViewAdapter
 import ru.labore.moderngymnasium.ui.base.BaseViewModel
@@ -9,38 +11,37 @@ import ru.labore.moderngymnasium.ui.fragments.create.CreateFragment
 import ru.labore.moderngymnasium.ui.fragments.detailedAnnouncement.DetailedAnnouncementFragment
 
 class InboxViewModel(
-    application: Application
-) : BaseViewModel(application) {
+    private val app: Application
+) : BaseViewModel(app) {
     private lateinit var viewAdapter: InboxRecyclerViewAdapter
+    private var currentOffset = appRepository.now()
     val itemCount
-        get() = viewAdapter.announcements.size
+        get() = announcements.size
 
 
     private var reachedEnd = false
-    private var adapterBinded = false
+    private val announcements = mutableListOf<AnnouncementEntity>()
 
     init {
         appRepository.unreadAnnouncementsPushListener = {
-            viewAdapter.prependAnnouncement(it)
+            announcements.add(InboxRecyclerViewAdapter.additionalItems, it)
+            viewAdapter.prependAnnouncement()
         }
     }
 
-    fun bindAdapter(
+    fun getAdapter(
         controls: ListElementFragment.Companion.ListElementFragmentControls
     ): InboxRecyclerViewAdapter {
-        if (!adapterBinded) {
-            val application = getApplication<Application>()
-
-            viewAdapter = InboxRecyclerViewAdapter(
-                application.resources,
-                {
-                    controls.push(CreateFragment(controls))
-                },
-                {
-                    controls.push(DetailedAnnouncementFragment(controls, it))
-                }
-            )
-        }
+        viewAdapter = InboxRecyclerViewAdapter(
+            app.resources,
+            announcements,
+            {
+                controls.push(CreateFragment(controls))
+            },
+            {
+                controls.push(DetailedAnnouncementFragment(controls, it))
+            }
+        )
 
         return viewAdapter
     }
@@ -52,28 +53,46 @@ class InboxViewModel(
     ) {
         if (refresh || !reachedEnd) {
             val offset = if (refresh) {
-                0
+                appRepository.now()
             } else {
-                itemCount
+                currentOffset
             }
 
-            val announcements = getAnnouncements(offset, forceFetch)
+            val newAnnouncements = getAnnouncements(offset, forceFetch)
+
+            if (newAnnouncements.isNotEmpty())
+                currentOffset = newAnnouncements.last().createdAt
 
             if (refresh) {
+                val previousSize = itemCount
+
                 reachedEnd = false
-                viewAdapter.refreshAnnouncements(announcements)
+                announcements.clear()
+                announcements.addAll(newAnnouncements)
+
+                viewAdapter.refreshAnnouncements(
+                    previousSize,
+                    itemCount
+                )
             } else {
-                if (announcements.isEmpty()) {
+                if (newAnnouncements.isEmpty()) {
                     reachedEnd = true
                 } else {
-                    viewAdapter.pushAnnouncements(announcements)
+                    val previousSize = itemCount
+
+                    announcements.addAll(newAnnouncements)
+
+                    viewAdapter.pushAnnouncements(
+                        previousSize,
+                        itemCount
+                    )
                 }
             }
         }
     }
 
     private suspend fun getAnnouncements(
-        offset: Int,
+        offset: ZonedDateTime,
         forceFetch: AppRepository.Companion.UpdateParameters
     ) =
         appRepository.getAnnouncements(offset, forceFetch)

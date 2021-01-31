@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import com.google.gson.Gson
 import okhttp3.Interceptor
 import okhttp3.Response
+import org.threeten.bp.ZonedDateTime
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.data.db.entities.ClassEntity
 import ru.labore.moderngymnasium.data.db.entities.RoleEntity
@@ -41,7 +42,7 @@ class AppNetwork(context: Context, private val gson: Gson) : Interceptor {
 
     suspend fun fetchAnnouncements(
         jwt: String,
-        offset: Int
+        offset: ZonedDateTime
     ) = utility.fetchAnnouncements(jwt, offset)
 
     suspend fun countAnnouncements(

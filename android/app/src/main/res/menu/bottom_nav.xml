@@ -8,8 +8,4 @@
         android:id="@+id/menuFragmentAnnouncements"
         android:icon="@drawable/ic_baseline_inbox"
         android:title="@string/menu_inbox" />
-    <item
-        android:id="@+id/menuFragmentProfile"
-        android:icon="@drawable/ic_baseline_person_pin"
-        android:title="@string/menu_profile" />
 </menu>

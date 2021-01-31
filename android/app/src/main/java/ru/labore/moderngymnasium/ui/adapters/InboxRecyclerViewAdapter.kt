@@ -13,9 +13,11 @@ import com.google.android.material.card.MaterialCardView
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.utils.announcementEntityToCaption
+import kotlin.math.min
 
 class InboxRecyclerViewAdapter(
     private val resources: Resources,
+    private val announcements: MutableList<AnnouncementEntity>,
     private val createClickHandler: () -> Unit,
     private val announcementClickHandler: (AnnouncementEntity) -> Unit = {}
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -58,13 +60,15 @@ class InboxRecyclerViewAdapter(
         const val ANNOUNCEMENT_VIEW_POSITION = -1
     }
 
+    init {
+        println(announcements.size)
+    }
+
     class AnnouncementViewHolder(val card: MaterialCardView) :
         RecyclerView.ViewHolder(card)
 
     class CreateViewHolder(val layout: ConstraintLayout) :
         RecyclerView.ViewHolder(layout)
-
-    val announcements = mutableListOf<AnnouncementEntity>()
 
     override fun getItemViewType(position: Int): Int =
         when (position) {
@@ -149,46 +153,41 @@ class InboxRecyclerViewAdapter(
 
     override fun getItemCount() = announcements.size + additionalItems
 
-    fun prependAnnouncement(
-        announcement: AnnouncementEntity
-    ) {
-        announcements.add(0, announcement)
-
+    fun prependAnnouncement() {
         notifyItemInserted(additionalItems)
     }
 
     fun refreshAnnouncements(
-        newAnnouncements: Array<AnnouncementEntity>
+        newSize: Int,
+        previousSize: Int
     ) {
-        val count = itemCount
-
-        announcements.clear()
-
-        notifyItemRangeRemoved(
-            additionalItems,
-            count + additionalItems
-        )
-
-        newAnnouncements.forEach {
-            announcements.add(it)
+        if (previousSize > newSize) {
+            notifyItemRangeRemoved(
+                additionalItems + newSize,
+            previousSize - newSize
+            )
         }
 
-        notifyItemRangeInserted(
+        notifyItemRangeChanged(
             additionalItems,
-            announcements.size + additionalItems
+            min(newSize, previousSize)
         )
+
+        if (previousSize < newSize) {
+            notifyItemRangeInserted(
+                itemCount,
+                newSize - previousSize
+            )
+        }
     }
 
     fun pushAnnouncements(
-        newAnnouncements: Array<AnnouncementEntity>
+        previousSize: Int,
+        addedSize: Int
     ) {
-        val positionStart = itemCount
-
-        announcements.addAll(newAnnouncements)
-
         notifyItemRangeInserted(
-            positionStart + additionalItems,
-            newAnnouncements.size + additionalItems
+            previousSize + additionalItems,
+            addedSize
         )
     }
 }

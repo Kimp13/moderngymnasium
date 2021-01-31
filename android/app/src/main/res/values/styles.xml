@@ -7,9 +7,9 @@
         <item name="editTextStyle">@style/AppEditTextStyle</item>
         <item name="buttonStyle">@style/AppButtonStyle</item>
         <item name="materialButtonStyle">@style/AppButtonStyle</item>
-        <item name="android:textColor">?android:attr/textColorPrimaryInverse</item>
-        <item name="colorControlNormal">@color/colorPrimary</item>
-        <item name="colorControlActivated">@color/colorAccent</item>
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+        <item name="colorControlNormal">@color/colorBlack</item>
+        <item name="colorControlActivated">@color/colorPrimaryDark</item>
         <item name="cardViewStyle">@style/AppMaterialCardViewStyle</item>
         <item name="materialCardViewStyle">@style/AppMaterialCardViewStyle</item>
     </style>
@@ -34,7 +34,7 @@
     </style>
 
     <style name="AppMaterialCardViewStyle" parent="Widget.MaterialComponents.CardView">
-        <item name="cardBackgroundColor">@color/colorDarkVariant</item>
+        <item name="cardBackgroundColor">@color/colorPrimary</item>
     </style>
 
     <style name="AppButtonStyle" parent="Widget.AppCompat.Button">
@@ -49,7 +49,7 @@
     </style>
 
     <style name="AppTextViewButtonStyle" parent="Widget.AppCompat.TextView">
-        <item name="android:textColor">@color/colorAccent</item>
+        <item name="android:textColor">@color/colorPrimaryDark</item>
         <item name="android:background">?android:attr/selectableItemBackground</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>

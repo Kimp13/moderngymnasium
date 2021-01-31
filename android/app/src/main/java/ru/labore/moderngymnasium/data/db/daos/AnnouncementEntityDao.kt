@@ -1,6 +1,7 @@
 package ru.labore.moderngymnasium.data.db.daos
 
 import androidx.room.*
+import org.threeten.bp.ZonedDateTime
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 
 @Dao
@@ -23,16 +24,18 @@ interface AnnouncementEntityDao {
 
     @Query("""
         select * from announcement
+        where createdAt < :offset
         order by createdAt desc
-        limit :offset, 1
+        limit 1
     """)
-    suspend fun getAnnouncementAtOffset(offset: Int): AnnouncementEntity?
+    suspend fun getAnnouncementAtOffset(offset: ZonedDateTime): AnnouncementEntity?
 
     @Transaction
     @Query("""
         select * from announcement
+        where createdAt < :offset
         order by createdAt desc
-        limit :offset, :limit
+        limit :limit
     """)
-    suspend fun getAnnouncements(offset: Int, limit: Int): Array<AnnouncementEntity>
+    suspend fun getAnnouncements(offset: ZonedDateTime, limit: Int): Array<AnnouncementEntity>
 }
