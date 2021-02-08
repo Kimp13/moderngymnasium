@@ -6,7 +6,7 @@
         &app_id;.PREFERENCE_FILE_KEY
     </string>
     <string name="api_url" translatable="false">
-        http://192.168.1.8:3000/api/
+        http://192.168.1.7:3000/api/
     </string>
     <string name="default_notification_channel_id" translatable="false">&app_id;</string>
     <string name="notification_channel_name" translatable="false">

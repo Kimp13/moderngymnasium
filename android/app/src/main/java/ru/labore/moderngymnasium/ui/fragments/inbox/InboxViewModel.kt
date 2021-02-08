@@ -1,6 +1,10 @@
 package ru.labore.moderngymnasium.ui.fragments.inbox
 
+import android.app.Activity
 import android.app.Application
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import org.threeten.bp.ZonedDateTime
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.data.repository.AppRepository
@@ -18,7 +22,7 @@ class InboxViewModel(
     val itemCount
         get() = announcements.size
 
-
+    private var current: Job? = null
     private var reachedEnd = false
     private val announcements = mutableListOf<AnnouncementEntity>()
 
@@ -47,49 +51,71 @@ class InboxViewModel(
     }
 
     suspend fun updateAnnouncements(
+        activity: Activity,
         forceFetch: AppRepository.Companion.UpdateParameters =
             AppRepository.Companion.UpdateParameters.DETERMINE,
         refresh: Boolean = false
     ) {
-        if (refresh || !reachedEnd) {
-            val offset = if (refresh) {
-                null
-            } else {
-                currentOffset
-            }
-
-            val newAnnouncements = getAnnouncements(offset, forceFetch)
-
-            println(newAnnouncements.size)
-
-            if (newAnnouncements.isNotEmpty())
-                currentOffset = newAnnouncements.last().createdAt
-
-            if (refresh) {
-                val previousSize = itemCount
-
-                reachedEnd = false
-                announcements.clear()
-                announcements.addAll(newAnnouncements)
-
-                viewAdapter.refreshAnnouncements(
-                    previousSize,
-                    itemCount
-                )
-            } else {
-                if (newAnnouncements.isEmpty()) {
-                    reachedEnd = true
+        if (current == null || !current!!.isActive) {
+            if (refresh || !reachedEnd) {
+                val offset = if (refresh) {
+                    null
                 } else {
+                    currentOffset
+                }
+
+                var newAnnouncements = arrayOf<AnnouncementEntity>()
+
+                current = GlobalScope.async {
+                    makeRequest(
+                        activity,
+                        {
+                            newAnnouncements = getAnnouncements(offset, forceFetch)
+                        },
+                        {
+                            newAnnouncements = getAnnouncements(
+                                offset,
+                                AppRepository.Companion.UpdateParameters.DONT_UPDATE
+                            )
+                        }
+                    )
+                }
+
+                current?.join()
+
+                println(newAnnouncements.size)
+
+                if (newAnnouncements.isNotEmpty())
+                    currentOffset = newAnnouncements.last().createdAt
+
+                if (refresh) {
                     val previousSize = itemCount
 
+                    reachedEnd = false
+                    announcements.clear()
                     announcements.addAll(newAnnouncements)
 
-                    viewAdapter.pushAnnouncements(
+                    viewAdapter.refreshAnnouncements(
                         previousSize,
                         itemCount
                     )
+                } else {
+                    if (newAnnouncements.isEmpty()) {
+                        reachedEnd = true
+                    } else {
+                        val previousSize = itemCount
+
+                        announcements.addAll(newAnnouncements)
+
+                        viewAdapter.pushAnnouncements(
+                            previousSize,
+                            itemCount
+                        )
+                    }
                 }
             }
+        } else {
+            current?.join()
         }
     }
 

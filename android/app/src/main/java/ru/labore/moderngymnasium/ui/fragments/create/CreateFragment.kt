@@ -4,8 +4,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.core.view.children
+import androidx.core.view.get
 import androidx.fragment.app.viewModels
 import kotlinx.android.synthetic.main.fragment_create.*
 import kotlinx.coroutines.launch
@@ -39,7 +41,27 @@ class CreateFragment(
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
+        val progressBar = ProgressBar(activity)
+        progressBar.isIndeterminate = true
 
+        launch {
+            loadUI()
+        }
+
+        createFragmentToolbar.setOnMenuItemClickListener {
+            createFragmentToolbar.menu[0].actionView = progressBar
+
+            createAnnouncement {
+                createFragmentToolbar.menu.clear()
+                createFragmentToolbar.inflateMenu(R.menu.create_toolbar_menu)
+            }
+
+            true
+        }
+
+        createAnnouncementBackButton?.setOnClickListener {
+            controls.finish()
+        }
 
         createFragmentScrollView
             .viewTreeObserver
@@ -62,21 +84,19 @@ class CreateFragment(
         createFragmentParametersLayout?.children?.forEach {
             it.setOnClickListener { hideKeyboard() }
         }
-        createAnnouncementSubmitButton?.setOnClickListener { createAnnouncement() }
-        createAnnouncementBackButton?.setOnClickListener {
-            controls.finish()
-        }
-
-        loadUI()
     }
 
-    private fun createAnnouncement() {
+    private fun createAnnouncement(
+        afterAll: () -> Unit
+    ) {
         if (viewModel.checkedRoles.keys.size == 0) {
             Toast.makeText(
                 activity,
                 getString(R.string.choose_recipient_role),
                 Toast.LENGTH_SHORT
             ).show()
+
+            afterAll()
         } else {
             val text = createAnnouncementEditText
                 .text
@@ -89,16 +109,16 @@ class CreateFragment(
                     getString(R.string.enter_announcement_text),
                     Toast.LENGTH_SHORT
                 ).show()
-            } else makeRequest({
-                createAnnouncementSubmitButton.visibility = View.GONE
-                createAnnouncementSubmitProgress.visibility = View.VISIBLE
 
+                afterAll()
+            } else makeRequest({
                 viewModel.createAnnouncement(text)
 
                 createAnnouncementEditText.setText("")
 
-                createAnnouncementSubmitButton.visibility = View.VISIBLE
-                createAnnouncementSubmitProgress.visibility = View.GONE
+                afterAll()
+            }, {
+                afterAll()
             })
         }
     }
@@ -113,114 +133,111 @@ class CreateFragment(
             viewModel.checkedRoles[roleId]!!.remove(classId)
     }
 
-    private fun loadUI() = launch {
-        var roles = HashMap<Int, RoleEntity>()
-        var classes = HashMap<Int, ClassEntity>()
+    private suspend fun loadUI() {
+        val act = activity
 
-        makeRequest({
-            roles = viewModel.getRoles()
+        if (act != null) {
+            val roles = viewModel.getRoles(act)
+            val classes = viewModel.getClasses(act)
 
-            classes = viewModel.getClasses()
-        }).join()
+            viewModel.appRepository.announceMap.entries.forEach { roleMap ->
+                val role = roles[roleMap.key]
+                val checkboxLayout: View
+                val context = context
 
-        viewModel.appRepository.announceMap.entries.forEach { roleMap ->
-            val role = roles[roleMap.key]
-            val checkboxLayout: View
-            val context = context
+                if (role != null && context != null) {
+                    if (roleMap.value.size == 1) {
+                        val onlyClass = classes[roleMap.value[0]]!!
 
-            if (role != null && context != null) {
-                if (roleMap.value.size == 1) {
-                    val onlyClass = classes[roleMap.value[0]]!!
-
-                    checkboxLayout = LabelledCheckbox(
-                        context,
-                        "${role.name}, ${
-                            onlyClass.grade
-                        }${
-                            onlyClass.letter
-                        } класс"
-                    )
-
-                    checkboxLayout.outerCheckedChangeHandler = { checked ->
-                        childCheckedChangeHandler(
-                            checked,
-                            role.id,
-                            roleMap.value[0]
+                        checkboxLayout = LabelledCheckbox(
+                            context,
+                            "${role.name}, ${
+                                onlyClass.grade
+                            }${
+                                onlyClass.letter
+                            } класс"
                         )
-                    }
-                } else {
-                    val gradedClasses = HashMap<Int, ArrayList<Int>>()
 
-                    roleMap.value.contents.forEach { classId ->
-                        val classEntity = classes[classId]
+                        checkboxLayout.outerCheckedChangeHandler = { checked ->
+                            childCheckedChangeHandler(
+                                checked,
+                                role.id,
+                                roleMap.value[0]
+                            )
+                        }
+                    } else {
+                        val gradedClasses = HashMap<Int, ArrayList<Int>>()
 
-                        if (classEntity != null) {
-                            if (gradedClasses.containsKey(classEntity.grade)) {
-                                gradedClasses[classEntity.grade]!!.add(classId)
-                            } else {
-                                gradedClasses[classEntity.grade] = arrayListOf(classId)
+                        roleMap.value.contents.forEach { classId ->
+                            val classEntity = classes[classId]
+
+                            if (classEntity != null) {
+                                if (gradedClasses.containsKey(classEntity.grade)) {
+                                    gradedClasses[classEntity.grade]!!.add(classId)
+                                } else {
+                                    gradedClasses[classEntity.grade] = arrayListOf(classId)
+                                }
                             }
                         }
-                    }
 
-                    checkboxLayout = ParentCheckbox(
-                        context,
-                        "Роль: ${role.name}"
-                    )
+                        checkboxLayout = ParentCheckbox(
+                            context,
+                            "Роль: ${role.name}"
+                        )
 
-                    gradedClasses.entries.forEach {
-                        val childCheckbox: View
+                        gradedClasses.entries.forEach {
+                            val childCheckbox: View
 
-                        if (it.value.size == 1) {
-                            val onlyClass = classes[it.value[0]]!!
+                            if (it.value.size == 1) {
+                                val onlyClass = classes[it.value[0]]!!
 
-                            childCheckbox = LabelledCheckbox(
-                                context,
-                                "${
-                                    onlyClass.grade
-                                }${
-                                    onlyClass.letter
-                                } класс"
-                            )
-
-                            childCheckbox.outerCheckedChangeHandler = { checked ->
-                                childCheckedChangeHandler(
-                                    checked,
-                                    roleMap.key,
-                                    onlyClass.id
-                                )
-                            }
-                        } else {
-                            childCheckbox = ParentCheckbox(
-                                context,
-                                "${it.key}-я параллель"
-                            )
-
-                            it.value.forEach { classId ->
-                                val leafCheckbox = LabelledCheckbox(
+                                childCheckbox = LabelledCheckbox(
                                     context,
-                                    "${classes[classId]!!.letter} класс"
+                                    "${
+                                        onlyClass.grade
+                                    }${
+                                        onlyClass.letter
+                                    } класс"
                                 )
 
-                                leafCheckbox.outerCheckedChangeHandler = { checked ->
+                                childCheckbox.outerCheckedChangeHandler = { checked ->
                                     childCheckedChangeHandler(
                                         checked,
                                         roleMap.key,
-                                        classId
+                                        onlyClass.id
                                     )
                                 }
+                            } else {
+                                childCheckbox = ParentCheckbox(
+                                    context,
+                                    "${it.key}-я параллель"
+                                )
 
-                                childCheckbox.checkboxLayout.addView(leafCheckbox)
+                                it.value.forEach { classId ->
+                                    val leafCheckbox = LabelledCheckbox(
+                                        context,
+                                        "${classes[classId]!!.letter} класс"
+                                    )
+
+                                    leafCheckbox.outerCheckedChangeHandler = { checked ->
+                                        childCheckedChangeHandler(
+                                            checked,
+                                            roleMap.key,
+                                            classId
+                                        )
+                                    }
+
+                                    childCheckbox.checkboxLayout.addView(leafCheckbox)
+                                }
                             }
+
+                            checkboxLayout.checkboxLayout.addView(childCheckbox)
                         }
-
-                        checkboxLayout.checkboxLayout.addView(childCheckbox)
                     }
-                }
 
-                createAnnouncementRoleChoose.addView(checkboxLayout)
+                    createAnnouncementRoleChoose.addView(checkboxLayout)
+                }
             }
         }
-
     }
 }

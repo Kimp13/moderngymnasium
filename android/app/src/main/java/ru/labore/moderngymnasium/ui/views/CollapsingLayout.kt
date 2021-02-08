@@ -1,5 +1,7 @@
 package ru.labore.moderngymnasium.ui.views
 
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -17,6 +19,11 @@ class CollapsingLayout(
 ) : LinearLayout(context) {
     private val toolbar: ConstraintLayout
     private var collapsed = false
+    private val animator = ValueAnimator()
+    private val params = layoutParams ?: LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT,
+        ViewGroup.LayoutParams.WRAP_CONTENT
+    )
 
     init {
         orientation = LinearLayout.VERTICAL
@@ -50,7 +57,7 @@ class CollapsingLayout(
                         expandContent() // Made in functions for convenience
                         rotateShevronBack() // AND kind of encapsulation! ^_^
                     } else {
-                        collapseContent() // ditto
+                        collapseContent() // ditto - a new fancy word
                         rotateShevron() // ditto
                     }
 
@@ -58,6 +65,8 @@ class CollapsingLayout(
                 }
 
                 addView(toolbar, 0)
+
+                animator.duration = 300
             } finally {
                 recycle()
             }
@@ -70,13 +79,26 @@ class CollapsingLayout(
      * TODO animation
      */
     private fun expandContent() {
-        children.forEach {
-            println(it)
+        this.measure(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+        val height = this.measuredHeight
+
+        animator.removeAllUpdateListeners()
+        animator.setIntValues(this.height, height)
+        animator.addUpdateListener {
+            params.height =
+                if (it.currentPlayTime == it.duration)
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                else
+                    it.animatedValue as Int
+
+            layoutParams = params
         }
 
-        for (i in 1 until childCount) {
-            getChildAt(i).visibility = View.VISIBLE
-        }
+        animator.start()
     }
 
     /**
@@ -85,9 +107,15 @@ class CollapsingLayout(
      * TODO animation
      */
     private fun collapseContent() {
-        for (i in 1 until childCount) {
-            getChildAt(i).visibility = View.GONE
+        animator.removeAllUpdateListeners()
+        animator.setIntValues(this.height, toolbar.height)
+        animator.addUpdateListener {
+            params.height = it.animatedValue as Int
+
+            layoutParams = params
         }
+
+        animator.start()
     }
 
     /**

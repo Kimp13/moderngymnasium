@@ -19,7 +19,7 @@
                     <solid android:color="@android:color/transparent" />
                     <stroke
                         android:width="3dp"
-                        android:color="@color/colorPrimaryDark" />
+                        android:color="@color/colorAccent" />
                 </shape>
             </item>
             <item>

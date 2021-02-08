@@ -11,7 +11,6 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.fragment_inbox.*
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.repository.AppRepository
@@ -35,7 +34,9 @@ class InboxFragment(
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        bindUI()
+        launch {
+            bindUI()
+        }
 
         inboxRecyclerView.apply {
             val viewManager = LinearLayoutManager(requireActivity())
@@ -84,29 +85,38 @@ class InboxFragment(
         }
     }
 
-    private fun updateAnnouncements(
+    private suspend fun updateAnnouncements(
         forceFetch: AppRepository.Companion.UpdateParameters =
             AppRepository.Companion.UpdateParameters.DETERMINE,
         refresh: Boolean = false
-    ): Job = makeRequest ({
-        viewModel.updateAnnouncements(forceFetch, refresh)
-    }, {
-        viewModel.updateAnnouncements(
-            AppRepository.Companion.UpdateParameters.DONT_UPDATE,
-            refresh
-        )
-    })
+    ) {
+        val act = activity
+
+        if (act != null)
+            viewModel.updateAnnouncements(
+                act,
+                forceFetch,
+                refresh
+            )
+    }
 
     private fun refreshUI() = launch {
         updateAnnouncements(
             AppRepository.Companion.UpdateParameters.UPDATE,
             true
-        ).join()
+        )
 
         inboxRefreshLayout.isRefreshing = false
     }
 
-    private fun bindUI() = launch {
+    private suspend fun bindUI() {
+        if (viewModel.itemCount == 0) {
+            updateAnnouncements(
+                AppRepository.Companion.UpdateParameters.DETERMINE,
+                true
+            )
+        }
+
         val params =
             inboxProgressBar.layoutParams as ConstraintLayout.LayoutParams
 
@@ -116,13 +126,6 @@ class InboxFragment(
         params.topToTop = ConstraintLayout.LayoutParams.UNSET
         params.bottomToBottom = R.id.inboxFragmentLayout
         params.bottomMargin = 50
-
-        if (viewModel.itemCount == 0) {
-            updateAnnouncements(
-                AppRepository.Companion.UpdateParameters.DETERMINE,
-                true
-            ).join()
-        }
 
         inboxRefreshLayout.setOnRefreshListener {
             refreshUI()
