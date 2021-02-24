@@ -3,58 +3,46 @@ package ru.labore.moderngymnasium.ui.fragments.inbox
 import android.app.Activity
 import android.app.Application
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import ru.labore.moderngymnasium.data.AppRepository
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.ui.adapters.InboxRecyclerViewAdapter
-import ru.labore.moderngymnasium.ui.base.BaseViewModel
+import ru.labore.moderngymnasium.ui.base.BaseRecyclerViewModel
 import ru.labore.moderngymnasium.ui.base.ListElementFragment
 import ru.labore.moderngymnasium.ui.fragments.create.CreateFragment
 import ru.labore.moderngymnasium.ui.fragments.detailedAnnouncement.DetailedAnnouncementFragment
 
 class InboxViewModel(
-    private val app: Application
-) : BaseViewModel(app) {
-    private lateinit var viewAdapter: InboxRecyclerViewAdapter
-    private var currentOffset = 0
-    val itemCount
-        get() = announcements.size
-
-    private var loading: Boolean
-        get() =
-            viewAdapter.loading
-        set(value) {
-            viewAdapter.loading = value
-        }
-
-    private var current: Job? = null
-    private var reachedEnd = false
-    private val announcements = mutableListOf<AnnouncementEntity>()
-
+    app: Application
+) : BaseRecyclerViewModel(app) {
     init {
         appRepository.unreadAnnouncementsPushListener = {
-            announcements.add(viewAdapter.beginAdditionalItems.size, it)
-            viewAdapter.prependAnnouncement()
+            items.add(adapter.beginAdditionalItems.size, it)
+            adapter.prependItem()
         }
     }
+
+    lateinit var onAnnouncementClick: (AnnouncementEntity) -> Unit
+    lateinit var onCreateButtonClick: () -> Unit
 
     fun getAdapter(
         controls: ListElementFragment.Companion.ListElementFragmentControls
     ): InboxRecyclerViewAdapter {
-        viewAdapter = InboxRecyclerViewAdapter(
-            app.resources,
-            appRepository,
-            announcements,
-            {
-                controls.push(CreateFragment(controls))
-            },
-            {
-                controls.push(DetailedAnnouncementFragment(controls, it))
-            }
+        val newAdapter = InboxRecyclerViewAdapter(
+            this
         )
 
-        return viewAdapter
+        onAnnouncementClick = {
+            controls.push(DetailedAnnouncementFragment(controls, it))
+        }
+
+        onCreateButtonClick = {
+            controls.push(CreateFragment(controls))
+        }
+
+        adapter = newAdapter
+
+        return newAdapter
     }
 
     suspend fun updateAnnouncements(
@@ -75,7 +63,7 @@ class InboxViewModel(
 
                 val newAnnouncements = hashMapOf<Int, AnnouncementEntity>()
 
-                current = GlobalScope.async {
+                current = GlobalScope.launch {
                     makeRequest(
                         activity,
                         {
@@ -101,10 +89,10 @@ class InboxViewModel(
 
                     currentOffset = 0
                     reachedEnd = false
-                    announcements.clear()
-                    announcements.addAll(newAnnouncements.values)
+                    items.clear()
+                    items.addAll(newAnnouncements.values)
 
-                    viewAdapter.refreshAnnouncements(
+                    adapter.refreshItems(
                         previousSize,
                         itemCount
                     )
@@ -112,7 +100,7 @@ class InboxViewModel(
                     if (newAnnouncements.isEmpty()) {
                         reachedEnd = true
                     } else {
-                        val iterator = announcements.listIterator()
+                        val iterator = items.listIterator()
 
                         while (iterator.hasNext()) {
                             val it = iterator.next()
@@ -127,11 +115,11 @@ class InboxViewModel(
                         val previousSize = itemCount
 
                         currentOffset += newAnnouncements.size
-                        announcements.addAll(newAnnouncements.values)
+                        items.addAll(newAnnouncements.values)
 
-                        viewAdapter.pushAnnouncements(
+                        adapter.pushItems(
                             previousSize,
-                            itemCount
+                            newAnnouncements.size
                         )
                     }
                 }

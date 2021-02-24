@@ -5,9 +5,12 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.recyclerview.widget.RecyclerView
 import ru.labore.moderngymnasium.R
+import ru.labore.moderngymnasium.data.db.entities.AuthoredEntity
+import kotlin.math.min
 
-abstract class BaseRecyclerViewAdapter
-    : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+abstract class BaseRecyclerViewAdapter(
+    open val viewModel: BaseRecyclerViewModel
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     companion object Base {
         const val DEFAULT_VIEW_POSITION = -1
         const val LOADING_VIEW_HOLDER_ID = "loading"
@@ -41,10 +44,24 @@ abstract class BaseRecyclerViewAdapter
     }
 
     val beginAdditionalItems = arrayListOf<AdditionalItem>()
-    val endAdditionalItems = arrayListOf<AdditionalItem>()
+    private val endAdditionalItems = arrayListOf<AdditionalItem>(
+        AdditionalItem(
+            LOADING_VIEW_HOLDER_ID
+        ) {
+            LoadingViewHolder(
+                LayoutInflater.from(it.context)
+                    .inflate(
+                        R.layout.loading_view_holder,
+                        it,
+                        false
+                    ) as LinearLayout
+            )
+        }
+    )
 
     var loading: Boolean = true
         set(value) {
+
             if (field != value) {
                 field = value
 
@@ -86,6 +103,8 @@ abstract class BaseRecyclerViewAdapter
                 notifyItemInserted(itemCount - 1)
             }
         } else {
+            println("Trying to remove!")
+
             for (i in 0 until endAdditionalItems.size) {
                 if (endAdditionalItems[i].id == LOADING_VIEW_HOLDER_ID) {
                     endAdditionalItems.removeAt(i)
@@ -99,7 +118,7 @@ abstract class BaseRecyclerViewAdapter
     }
 
     override fun getItemViewType(position: Int): Int {
-        val ret = if (position < beginAdditionalItems.size) {
+        return if (position < beginAdditionalItems.size) {
             position
         } else {
             val i = position - defaultItemCount - beginAdditionalItems.size
@@ -109,8 +128,6 @@ abstract class BaseRecyclerViewAdapter
             else
                 DEFAULT_VIEW_POSITION
         }
-
-        return ret
     }
 
     override fun onCreateViewHolder(
@@ -130,5 +147,52 @@ abstract class BaseRecyclerViewAdapter
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         (holder as BaseViewHolder).onBind(position, this)
+    }
+
+    fun prependItem() {
+        notifyItemInserted(beginAdditionalItems.size)
+    }
+
+    fun prependItem(item: AuthoredEntity) {
+        viewModel.items.add(0, item)
+
+        prependItem()
+    }
+
+    fun refreshItems(
+        previousSize: Int,
+        newSize: Int
+    ) {
+        if (previousSize > newSize) {
+            notifyItemRangeRemoved(
+                beginAdditionalItems.size + newSize,
+                previousSize - newSize
+            )
+        }
+
+        val minimal = min(newSize, previousSize)
+
+        if (minimal > 0)
+            notifyItemRangeChanged(
+                beginAdditionalItems.size,
+                minimal
+            )
+
+        if (previousSize < newSize) {
+            notifyItemRangeInserted(
+                beginAdditionalItems.size + previousSize,
+                newSize - previousSize
+            )
+        }
+    }
+
+    fun pushItems(
+        previousSize: Int,
+        addedSize: Int
+    ) {
+        notifyItemRangeInserted(
+            previousSize + beginAdditionalItems.size,
+            addedSize
+        )
     }
 }

@@ -8,15 +8,18 @@ class CommentEntity(
     id: Int,
 
     authorId: Int,
+    commentCount: Int,
     val announcementId: Int,
     val replyTo: Int?,
-    val text: String,
+    text: String,
     val childrenCount: Int,
     createdAt: ZonedDateTime,
     updatedAt: ZonedDateTime
 ) : AuthoredEntity(
     id,
     authorId,
+    commentCount,
+    text,
     createdAt,
     updatedAt
 )

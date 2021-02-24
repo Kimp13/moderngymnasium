@@ -7,6 +7,8 @@ abstract class AuthoredEntity(
     @PrimaryKey(autoGenerate = false)
     val id: Int,
     val authorId: Int,
+    var commentCount: Int,
+    val text: String,
     var createdAt: ZonedDateTime,
-    var updatedAt: ZonedDateTime
+    var updatedAt: ZonedDateTime,
 )

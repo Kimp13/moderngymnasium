@@ -532,9 +532,6 @@ class AppRepository(
 
                 persistFetchedAnnouncements(announcements)
             }
-            offset == 0 -> {
-                announcements = announcementEntityDao.getFirstAnnouncements(DEFAULT_LIMIT)
-            }
             else -> {
                 announcements = announcementEntityDao.getAnnouncements(offset, DEFAULT_LIMIT)
             }
@@ -639,6 +636,14 @@ class AppRepository(
         }
 
         return keyed
+    }
+
+    suspend fun persistFetchedAuthoredEntity(
+        item: AuthoredEntity
+    ) = when (item) {
+        is AnnouncementEntity -> persistFetchedAnnouncement(item)
+        is CommentEntity -> persistFetchedComment(item)
+        else -> TODO()
     }
 
     private suspend fun persistFetchedComment(

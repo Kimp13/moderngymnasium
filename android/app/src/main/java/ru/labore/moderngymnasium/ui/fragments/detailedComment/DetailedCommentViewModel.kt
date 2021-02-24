@@ -1,4 +1,4 @@
-package ru.labore.moderngymnasium.ui.fragments.detailedAnnouncement
+package ru.labore.moderngymnasium.ui.fragments.detailedComment
 
 import android.app.Activity
 import android.app.Application
@@ -8,17 +8,18 @@ import kotlinx.coroutines.async
 import ru.labore.moderngymnasium.data.AppRepository
 import ru.labore.moderngymnasium.data.db.entities.CommentEntity
 import ru.labore.moderngymnasium.ui.adapters.DetailedAnnouncementRecyclerViewAdapter
+import ru.labore.moderngymnasium.ui.adapters.DetailedCommentRecyclerViewAdapter
 import ru.labore.moderngymnasium.ui.base.AuthoredEntityViewModel
 
-class DetailedAnnouncementViewModel(
+class DetailedCommentViewModel(
     app: Application
 ) : AuthoredEntityViewModel(app) {
     fun getAdapter(
-        currentFragment: DetailedAnnouncementFragment
-    ): DetailedAnnouncementRecyclerViewAdapter {
+        currentFragment: DetailedCommentFragment
+    ): DetailedCommentRecyclerViewAdapter {
         fragment = currentFragment
 
-        val newAdapter = DetailedAnnouncementRecyclerViewAdapter(this)
+        val newAdapter = DetailedCommentRecyclerViewAdapter(this)
         newAdapter.updateAdditionalItems()
 
         adapter = newAdapter
@@ -61,6 +62,8 @@ class DetailedAnnouncementViewModel(
                             }
                         }
                     )
+
+                    loading = false
                 }
 
                 current?.join()

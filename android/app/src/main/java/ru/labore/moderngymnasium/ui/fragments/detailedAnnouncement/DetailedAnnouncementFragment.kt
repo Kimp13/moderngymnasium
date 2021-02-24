@@ -15,12 +15,15 @@ import kotlinx.coroutines.launch
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.AppRepository
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
+import ru.labore.moderngymnasium.data.db.entities.AuthoredEntity
+import ru.labore.moderngymnasium.ui.base.AuthoredEntityFragment
+import ru.labore.moderngymnasium.ui.base.BaseViewModel
 import ru.labore.moderngymnasium.ui.base.ListElementFragment
 
 class DetailedAnnouncementFragment(
     controls: Companion.ListElementFragmentControls,
-    internal val announcement: AnnouncementEntity
-) : ListElementFragment(controls) {
+    item: AuthoredEntity
+) : AuthoredEntityFragment(controls, item) {
     override val viewModel: DetailedAnnouncementViewModel by viewModels()
 
     override fun onCreateView(

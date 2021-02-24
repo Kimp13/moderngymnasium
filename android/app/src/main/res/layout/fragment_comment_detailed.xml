@@ -2,7 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/announcementDetailedRootLayout"
+    android:id="@+id/commentDetailedRootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorDarkVariant"
@@ -10,24 +10,24 @@
     tools:context=".ui.fragments.detailedAnnouncement.DetailedAnnouncementFragment">
 
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/announcementDetailedToolbar"
+        android:id="@+id/commentDetailedToolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/colorPrimaryDark"
-        app:layout_constraintBottom_toTopOf="@id/announcementDetailedRefresh"
+        app:layout_constraintBottom_toTopOf="@id/commentDetailedRefresh"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <Button
-            android:id="@+id/announcementDetailedBackButton"
+            android:id="@+id/commentDetailedBackButton"
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:layout_marginEnd="20dp"
             android:background="@drawable/close_button_background" />
 
         <TextView
-            android:id="@+id/announcementDetailedTopLabel"
+            android:id="@+id/commentDetailedTopLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/announcement"
@@ -37,17 +37,17 @@
     </androidx.appcompat.widget.Toolbar>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/announcementDetailedRefresh"
+        android:id="@+id/commentDetailedRefresh"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/announcementDetailedToolbar"
+        app:layout_constraintTop_toBottomOf="@id/commentDetailedToolbar"
         app:layout_constraintVertical_weight="1">
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/announcementDetailedRecyclerView"
+            android:id="@+id/commentDetailedRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

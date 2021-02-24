@@ -1,4 +1,4 @@
-package ru.labore.moderngymnasium.ui.fragments.inbox
+package ru.labore.moderngymnasium.ui.fragments.detailedComment
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,23 +9,29 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.android.synthetic.main.fragment_inbox.*
+import kotlinx.android.synthetic.main.fragment_announcement_detailed.*
+import kotlinx.android.synthetic.main.fragment_comment_detailed.*
 import kotlinx.coroutines.launch
 import ru.labore.moderngymnasium.R
 import ru.labore.moderngymnasium.data.AppRepository
-import ru.labore.moderngymnasium.ui.activities.MainActivity
-import ru.labore.moderngymnasium.ui.base.ListElementFragment
+import ru.labore.moderngymnasium.data.db.entities.CommentEntity
+import ru.labore.moderngymnasium.ui.base.AuthoredEntityFragment
 
-class InboxFragment(
-    controls: Companion.ListElementFragmentControls
-) : ListElementFragment(controls) {
-    override val viewModel: InboxViewModel by viewModels()
+class DetailedCommentFragment(
+    controls: Companion.ListElementFragmentControls,
+    item: CommentEntity
+) : AuthoredEntityFragment(controls, item) {
+    override val viewModel: DetailedCommentViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_inbox, container, false)
+        return inflater.inflate(
+            R.layout.fragment_comment_detailed,
+            container,
+            false
+        )
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -35,23 +41,26 @@ class InboxFragment(
             bindUI()
         }
 
-        inboxRecyclerView.apply {
+        commentDetailedBackButton.setOnClickListener {
+            controls.finish()
+        }
+
+        commentDetailedRecyclerView.apply {
             val viewManager = LinearLayoutManager(requireActivity())
             val divider = DividerItemDecoration(requireContext(), viewManager.orientation)
 
             divider.setDrawable(
                 ResourcesCompat.getDrawable(
                     resources,
-                    R.drawable.inbox_recycler_view_divider,
+                    R.drawable.detailed_announcement_recycler_view_divider,
                     null
                 )!!
             )
 
             addItemDecoration(divider)
-            setHasFixedSize(true)
 
             layoutManager = viewManager
-            adapter = viewModel.getAdapter(controls)
+            adapter = viewModel.getAdapter(this@DetailedCommentFragment)
 
             scrollBy(0, savedInstanceState?.getInt("scrollY") ?: 0)
 
@@ -61,27 +70,10 @@ class InboxFragment(
 
                     if (height - scrollY <= 50)
                         launch {
-                            viewModel.updateAnnouncements(
+                            viewModel.updateComments(
                                 requireActivity()
                             )
                         }
-
-                    if (layoutManager is LinearLayoutManager) {
-                        val firstItemIndex = (layoutManager as LinearLayoutManager)
-                            .findFirstCompletelyVisibleItemPosition()
-
-                        viewModel.appRepository.unreadAnnouncements.let { list ->
-                            if (firstItemIndex < list.size) {
-                                for (i in list.size - 1 downTo firstItemIndex)
-                                    list.removeAt(i)
-
-                                requireActivity().let {
-                                    if (it is MainActivity)
-                                        it.updateInboxBadge(list.size)
-                                }
-                            }
-                        }
-                    }
                 }
             })
         }
@@ -90,28 +82,25 @@ class InboxFragment(
     private suspend fun bindUI() {
         viewModel.setup(requireActivity())
 
-        inboxRefreshLayout.setOnRefreshListener {
+        announcementDetailedRefresh.setOnRefreshListener {
             launch {
-                viewModel.updateAnnouncements(
+                viewModel.updateComments(
                     requireActivity(),
                     AppRepository.Companion.UpdateParameters.UPDATE,
                     true
                 )
 
-                inboxRefreshLayout.isRefreshing = false
+                announcementDetailedRefresh.isRefreshing = false
             }
         }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        outState.putInt("scrollY", inboxRecyclerView.computeVerticalScrollOffset())
+        outState.putInt(
+            "scrollY",
+            announcementDetailedRecyclerView.computeVerticalScrollOffset()
+        )
 
         super.onSaveInstanceState(outState)
-    }
-
-    override fun onDestroy() {
-        viewModel.appRepository.unreadAnnouncementsPushListener = null
-
-        super.onDestroy()
     }
 }

@@ -1,6 +1,5 @@
 package ru.labore.moderngymnasium.ui.adapters
 
-import android.content.res.Resources
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,20 +9,15 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.children
 import ru.labore.moderngymnasium.R
-import ru.labore.moderngymnasium.data.AppRepository
 import ru.labore.moderngymnasium.data.db.entities.AnnouncementEntity
 import ru.labore.moderngymnasium.ui.base.BaseRecyclerViewAdapter
 import ru.labore.moderngymnasium.ui.base.BaseViewHolder
+import ru.labore.moderngymnasium.ui.fragments.inbox.InboxViewModel
 import ru.labore.moderngymnasium.utils.announcementEntityToCaption
-import kotlin.math.min
 
 class InboxRecyclerViewAdapter(
-    private val resources: Resources,
-    private val appRepository: AppRepository,
-    private val announcements: MutableList<AnnouncementEntity>,
-    private val createClickHandler: () -> Unit,
-    private val announcementClickHandler: (AnnouncementEntity) -> Unit = {}
-) : BaseRecyclerViewAdapter() {
+    override val viewModel: InboxViewModel
+    ) : BaseRecyclerViewAdapter(viewModel) {
     companion object Inbox {
         private fun isWordCharacter(character: Char): Boolean =
             when (character.toInt()) {
@@ -55,7 +49,6 @@ class InboxRecyclerViewAdapter(
 
         private const val shortTextCharCount = 200
 
-
         class AnnouncementViewHolder(private val layout: LinearLayout) :
             BaseViewHolder(layout) {
             override fun onBind(position: Int, parent: BaseRecyclerViewAdapter) {
@@ -66,26 +59,28 @@ class InboxRecyclerViewAdapter(
                     val textView = layout.getChildAt(1) as TextView
                     val expandButton = layout.getChildAt(2)
                     val commentButton = layout.children.last() as TextView
-                    val pos = position - parent.beginAdditionalItems.size
-                    val author = parent.appRepository.users[
-                            parent.announcements[pos].authorId
+                    val announcement = parent.viewModel.items[
+                            position - parent.beginAdditionalItems.size
+                    ] as AnnouncementEntity
+                    val author = parent.viewModel.appRepository.users[
+                            announcement.authorId
                     ]
-                    val role = parent.appRepository.roles[author?.roleId]
-                    val `class` = parent.appRepository.classes[author?.classId]
+                    val role = parent.viewModel.appRepository.roles[author?.roleId]
+                    val `class` = parent.viewModel.appRepository.classes[author?.classId]
 
                     layout.setOnClickListener {
-                        parent.announcementClickHandler(
-                            parent.announcements[pos]
+                        parent.viewModel.onAnnouncementClick(
+                            announcement
                         )
                     }
 
                     authorView.text = if (author == null) {
                         authorRankView.visibility = View.GONE
-                        parent.resources.getString(R.string.no_author)
+                        parent.viewModel.app.resources.getString(R.string.no_author)
                     } else {
                         val caption = announcementEntityToCaption(
                             author,
-                            parent.resources.getString(R.string.noname),
+                            parent.viewModel.app.resources.getString(R.string.noname),
                             role,
                             `class`,
                         )
@@ -100,19 +95,19 @@ class InboxRecyclerViewAdapter(
                         }
                     }
 
-                    if (parent.announcements[pos].text.length <= shortTextCharCount) {
-                        textView.text = parent.announcements[pos].text
+                    if (announcement.text.length <= shortTextCharCount) {
+                        textView.text = announcement.text
                         expandButton.visibility = View.GONE
                     } else {
-                        textView.text = trimText(parent.announcements[pos].text)
+                        textView.text = trimText(announcement.text)
                         expandButton.visibility = View.VISIBLE
                         expandButton.setOnClickListener {
-                            textView.text = parent.announcements[pos].text
+                            textView.text = announcement.text
                             it.visibility = View.GONE
                         }
                     }
 
-                    val count = parent.announcements[pos].commentCount
+                    val count = announcement.commentCount
 
                     if (count > 0)
                         commentButton.text = count.toString()
@@ -127,7 +122,7 @@ class InboxRecyclerViewAdapter(
                     val button = layout.getChildAt(0) as Button?
 
                     button?.setOnClickListener {
-                        parent.createClickHandler()
+                        parent.viewModel.onCreateButtonClick()
                     }
                 }
             }
@@ -150,7 +145,7 @@ class InboxRecyclerViewAdapter(
     public override fun updateAdditionalItems() {
         super.updateAdditionalItems()
 
-        if (appRepository
+        if (viewModel.appRepository
                 .user
                 ?.data
                 ?.permissions
@@ -199,43 +194,5 @@ class InboxRecyclerViewAdapter(
     }
 
     override val defaultItemCount: Int
-        get() = announcements.size
-
-    fun prependAnnouncement() {
-        notifyItemInserted(beginAdditionalItems.size)
-    }
-
-    fun refreshAnnouncements(
-        newSize: Int,
-        previousSize: Int
-    ) {
-        if (previousSize > newSize) {
-            notifyItemRangeRemoved(
-                beginAdditionalItems.size + newSize,
-                previousSize - newSize
-            )
-        }
-
-        notifyItemRangeChanged(
-            beginAdditionalItems.size,
-            min(newSize, previousSize)
-        )
-
-        if (previousSize < newSize) {
-            notifyItemRangeInserted(
-                beginAdditionalItems.size + previousSize,
-                newSize - previousSize
-            )
-        }
-    }
-
-    fun pushAnnouncements(
-        previousSize: Int,
-        addedSize: Int
-    ) {
-        notifyItemRangeInserted(
-            previousSize + beginAdditionalItems.size,
-            addedSize
-        )
-    }
+        get() = viewModel.items.size
 }
