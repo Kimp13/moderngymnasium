@@ -23,7 +23,7 @@ class AppRepository(
     private val userEntityDao: UserEntityDao,
     private val roleEntityDao: RoleEntityDao,
     private val classEntityDao: ClassEntityDao,
-    private val appNetwork: AppNetwork,
+    val appNetwork: AppNetwork,
     private val gson: Gson
 ) {
     companion object {
@@ -425,7 +425,8 @@ class AppRepository(
                 0,
                 map["text"] ?: error(""),
                 ZonedDateTime.parse(map["createdAt"]),
-                now()
+                now(),
+                map["isEvent"].toBoolean(),
             )
 
             populateAnnouncementEntity(entity)

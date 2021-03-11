@@ -99,8 +99,8 @@ class DetailedAnnouncementViewModel(
                         currentOffset += newComments.size
                         items.addAll(newComments.values)
 
-                        if (currentOffset > fragment.item.commentCount) {
-                            fragment.item.commentCount = currentOffset
+                        if (currentOffset > fragment.item.commentsCount) {
+                            fragment.item.commentsCount = currentOffset
                             appRepository.persistFetchedAuthoredEntity(fragment.item)
                         }
 

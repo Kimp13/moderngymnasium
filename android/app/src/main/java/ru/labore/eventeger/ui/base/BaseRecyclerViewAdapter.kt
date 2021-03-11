@@ -50,21 +50,8 @@ abstract class BaseRecyclerViewAdapter(
         }
     }
 
-    val beginAdditionalItems = arrayListOf<AdditionalItem>()
-    private val endAdditionalItems = arrayListOf(
-        AdditionalItem(
-            LOADING_VIEW_HOLDER_ID
-        ) {
-            LoadingViewHolder(
-                LayoutInflater.from(it.context)
-                    .inflate(
-                        R.layout.loading_view_holder,
-                        it,
-                        false
-                    ) as LinearLayout
-            )
-        }
-    )
+    val beginAdditionalItems = mutableListOf<AdditionalItem>()
+    private val endAdditionalItems = mutableListOf<AdditionalItem>()
 
     var loading: Boolean = true
         set(value) {
@@ -82,8 +69,8 @@ abstract class BaseRecyclerViewAdapter(
         if (loading) {
             var loadingAbsent = true
 
-            for (i in 0 until endAdditionalItems.size) {
-                when (endAdditionalItems[i].id) {
+            endAdditionalItems.forEachIndexed { i, it ->
+                when (it.id) {
                     LOADING_VIEW_HOLDER_ID -> loadingAbsent = false
                     NOTHING_VIEW_HOLDER_ID -> {
                         endAdditionalItems.removeAt(i)
@@ -114,13 +101,18 @@ abstract class BaseRecyclerViewAdapter(
         } else {
             var nothingAbsent = true
 
-            for (i in 0 until endAdditionalItems.size) {
-                when (endAdditionalItems[i].id) {
+            endAdditionalItems.forEachIndexed { i, it ->
+                when (it.id) {
                     NOTHING_VIEW_HOLDER_ID -> nothingAbsent = false
                     LOADING_VIEW_HOLDER_ID -> {
                         endAdditionalItems.removeAt(i)
 
-                        notifyItemRemoved(beginAdditionalItems.size + defaultItemCount + i)
+                        notifyItemRemoved(
+                            beginAdditionalItems.size + defaultItemCount + i
+                        )
+
+                        println("$beginAdditionalItems")
+                        println("$endAdditionalItems")
                     }
                 }
             }
@@ -163,9 +155,13 @@ abstract class BaseRecyclerViewAdapter(
         parent: ViewGroup,
         viewType: Int
     ): RecyclerView.ViewHolder {
+        println("$viewType")
         return when (viewType) {
             DEFAULT_VIEW_POSITION -> createDefaultViewHolder(parent)
-            in 0 until beginAdditionalItems.size -> beginAdditionalItems[viewType](parent)
+            in 0 until beginAdditionalItems.size -> {
+                println("They're asking for begin! $viewType")
+                beginAdditionalItems[viewType](parent)
+            }
             else -> endAdditionalItems[viewType - beginAdditionalItems.size](parent)
         }
     }

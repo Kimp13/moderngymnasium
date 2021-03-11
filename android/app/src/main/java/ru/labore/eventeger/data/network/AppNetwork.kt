@@ -132,7 +132,7 @@ class AppNetwork(context: Context, gson: Gson) : Interceptor {
         }
     }
 
-    private fun isOnline(): Boolean {
+    fun isOnline(): Boolean {
         val connectivityManager = appContext.getSystemService(Context.CONNECTIVITY_SERVICE)
                 as ConnectivityManager? ?: return false
 

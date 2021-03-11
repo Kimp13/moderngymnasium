@@ -110,11 +110,11 @@
     </style>
 
     <style name="IconTextButton">
-        <item name="android:background">@drawable/icon_text_button_background</item>
-        <item name="android:clickable">true</item>
+<!--        <item name="android:background">@drawable/icon_text_button_background</item>-->
+<!--        <item name="android:clickable">true</item>-->
         <item name="android:drawablePadding">@dimen/iconButtonPadding</item>
         <item name="drawableTint">?attr/colorOnSurface</item>
-        <item name="android:focusable">true</item>
+<!--        <item name="android:focusable">true</item>-->
         <item name="android:padding">@dimen/iconButtonPadding</item>
         <item name="android:textColor">?attr/colorOnPrimary</item>
     </style>

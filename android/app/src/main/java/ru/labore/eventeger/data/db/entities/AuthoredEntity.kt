@@ -10,7 +10,7 @@ import ru.labore.eventeger.data.db.ZonedDateTimeParceler
 interface AuthoredEntity {
     val id: Int
     val authorId: Int
-    var commentCount: Int
+    var commentsCount: Int
     val text: String
     var createdAt: ZonedDateTime
     var updatedAt: ZonedDateTime

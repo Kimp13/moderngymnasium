@@ -32,21 +32,8 @@ class InboxFragment : BaseFragment() {
         super.onActivityCreated(savedInstanceState)
 
         inboxRecyclerView.apply {
-            val viewManager = LinearLayoutManager(requireActivity())
-            val divider = DividerItemDecoration(requireContext(), viewManager.orientation)
+            layoutManager = LinearLayoutManager(requireActivity())
 
-            divider.setDrawable(
-                ResourcesCompat.getDrawable(
-                    resources,
-                    R.drawable.inbox_recycler_view_divider,
-                    null
-                )!!
-            )
-
-            addItemDecoration(divider)
-            setHasFixedSize(true)
-
-            layoutManager = viewManager
             adapter = viewModel.getAdapter({
                 findNavController().navigate(
                     R.id.action_announcements_to_detailed,
@@ -55,6 +42,20 @@ class InboxFragment : BaseFragment() {
             }, {
                 findNavController().navigate(R.id.action_announcements_to_create)
             })
+
+            addItemDecoration(DividerItemDecoration(
+                requireContext(),
+                DividerItemDecoration.VERTICAL
+            ).apply {
+                setDrawable(
+                    ResourcesCompat.getDrawable(
+                        resources,
+                        R.drawable.inbox_recycler_view_divider,
+                        null
+                    )!!
+                )
+            })
+            setHasFixedSize(true)
 
             scrollBy(0, savedInstanceState?.getInt("scrollY") ?: 0)
 

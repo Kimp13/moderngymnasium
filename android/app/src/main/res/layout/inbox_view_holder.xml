@@ -9,58 +9,21 @@
     android:orientation="vertical"
     android:padding="@dimen/miniSize">
 
-    <ImageView
-        android:id="@+id/inboxCardImageView"
-        android:layout_width="@dimen/kiloImageSize"
-        android:layout_height="@dimen/kiloImageSize"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:background="@drawable/clickable_background_borderless_inverse"
-        android:clickable="true"
-        android:contentDescription="@string/announcement"
-        android:focusable="true"
-        android:src="@drawable/ic_baseline_person_pin"
-        app:tint="?attr/colorOnSurface" />
+    <include layout="@layout/base_announcement_view_holder" />
 
     <TextView
-        android:id="@+id/inboxCardAuthorTextView"
-        style="@style/AnnouncementAuthorTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="@dimen/size"
-        android:layout_toEndOf="@id/inboxCardImageView" />
-
-    <TextView
-        android:id="@+id/inboxCardRankTextView"
-        style="@style/AnnouncementAuthorRankTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/inboxCardAuthorTextView"
-        android:layout_marginStart="@dimen/size"
-        android:layout_toEndOf="@id/inboxCardImageView" />
-
-    <TextView
-        android:id="@+id/inboxCardTextTextView"
-        style="@style/AnnouncementTextTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/inboxCardImageView"
-        android:layout_marginTop="@dimen/size" />
-
-    <TextView
-        android:id="@+id/inboxCardExpandTextView"
+        android:id="@+id/announcementCardExpandTextView"
         style="@style/AppTextViewButtonStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/inboxCardTextTextView"
+        android:layout_below="@id/announcementCardText"
         android:text="@string/expand_text" />
 
     <TextView
         style="@style/IconTextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/inboxCardExpandTextView"
+        android:layout_below="@id/announcementCardExpandTextView"
         android:layout_alignParentEnd="true"
         app:drawableStartCompat="@drawable/ic_baseline_comment" />
 </RelativeLayout>

@@ -50,7 +50,6 @@ abstract class BaseViewModel(
             whenCaught()
 
             MainScope().launch {
-
                 Toast.makeText(
                     activity,
                     when (e) {

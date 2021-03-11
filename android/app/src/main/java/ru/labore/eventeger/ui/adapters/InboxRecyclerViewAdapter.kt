@@ -17,7 +17,7 @@ import ru.labore.eventeger.utils.announcementEntityToCaption
 
 class InboxRecyclerViewAdapter(
     override val viewModel: InboxViewModel
-    ) : BaseRecyclerViewAdapter(viewModel) {
+) : BaseRecyclerViewAdapter(viewModel) {
     companion object Inbox {
         private fun isWordCharacter(character: Char): Boolean =
             when (character.toInt()) {
@@ -49,54 +49,26 @@ class InboxRecyclerViewAdapter(
 
         private const val shortTextCharCount = 200
 
-        class AnnouncementViewHolder(private val layout: RelativeLayout) :
-            BaseViewHolder(layout) {
+        class AnnouncementViewHolder(layout: RelativeLayout) :
+            DetailedAnnouncementRecyclerViewAdapter
+            .DetailedAnnouncement
+            .AnnouncementViewHolder(layout) {
             override fun onBind(position: Int, parent: BaseRecyclerViewAdapter) {
-                if (parent is InboxRecyclerViewAdapter) {
-                    val iterator = layout.children.iterator().apply {
-                        next()
-                    }
+                super.onBind(position, parent)
 
-                    val authorView = iterator.next() as TextView
-                    val authorRankView = iterator.next() as TextView
-                    val textView = iterator.next() as TextView
-                    val expandButton = iterator.next() as TextView
-                    val commentButton = iterator.next() as TextView
+                if (parent is InboxRecyclerViewAdapter) {
+                    val textView = layout.getChildAt(4) as TextView
+                    val expandButton = layout.getChildAt(7) as TextView
+                    val commentButton = layout.getChildAt(8) as TextView
 
                     val announcement = parent.viewModel.items[
                             position - parent.beginAdditionalItems.size
                     ] as AnnouncementEntity
-                    val author = parent.viewModel.appRepository.users[
-                            announcement.authorId
-                    ]
-                    val role = parent.viewModel.appRepository.roles[author?.roleId]
-                    val `class` = parent.viewModel.appRepository.classes[author?.classId]
 
                     layout.setOnClickListener {
                         parent.viewModel.onAnnouncementClick(
                             announcement
                         )
-                    }
-
-                    authorView.text = if (author == null) {
-                        authorRankView.visibility = View.GONE
-                        parent.viewModel.app.resources.getString(R.string.no_author)
-                    } else {
-                        val caption = announcementEntityToCaption(
-                            author,
-                            parent.viewModel.app.resources.getString(R.string.noname),
-                            role,
-                            `class`,
-                        )
-                        val comma = caption.indexOf(',')
-
-                        if (comma == -1) {
-                            authorRankView.visibility = View.GONE
-                            caption
-                        } else {
-                            authorRankView.text = caption.substring(comma + 2)
-                            caption.substring(0, comma)
-                        }
                     }
 
                     if (announcement.text.length <= shortTextCharCount) {
@@ -111,10 +83,14 @@ class InboxRecyclerViewAdapter(
                         }
                     }
 
-                    val count = announcement.commentCount
+                    val count = announcement.commentsCount
 
-                    if (count > 0)
+                    if (count > 0) {
+                        commentButton.visibility = View.VISIBLE
                         commentButton.text = count.toString()
+                    } else {
+                        commentButton.visibility = View.GONE
+                    }
                 }
             }
         }
@@ -149,7 +125,9 @@ class InboxRecyclerViewAdapter(
     public override fun updateAdditionalItems() {
         super.updateAdditionalItems()
 
-        if (viewModel.appRepository
+        if (
+            viewModel.appRepository.appNetwork.isOnline() &&
+            viewModel.appRepository
                 .user
                 ?.data
                 ?.permissions

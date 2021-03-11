@@ -50,9 +50,11 @@ abstract class DetailedAuthoredEntityRecyclerViewAdapter(
 
                     text.text = comment.text
 
-                    if (comment.commentCount > 0) {
+                    if (comment.commentsCount > 0) {
                         iconButton.visibility = View.VISIBLE
-                        iconButton.text = comment.commentCount.toString()
+                        iconButton.text = comment.commentsCount.toString()
+                    } else {
+                        iconButton.visibility = View.GONE
                     }
                 }
             }
@@ -72,8 +74,8 @@ abstract class DetailedAuthoredEntityRecyclerViewAdapter(
                     parent.commentSendButton = children.next()
                     parent.commentSendProgressBar = children.next()
 
-                    if (parent.viewModel.fragment.item.commentCount > 0)
-                        headerCount.text = parent.viewModel.fragment.item.commentCount.toString()
+                    if (parent.viewModel.fragment.item.commentsCount > 0)
+                        headerCount.text = parent.viewModel.fragment.item.commentsCount.toString()
 
                     parent.initializeCommentSending()
                 }

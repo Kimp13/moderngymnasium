@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="@layout/inbox_view_holder">
+
+    <ImageView
+        android:id="@+id/announcementCardImageView"
+        android:layout_width="@dimen/kiloImageSize"
+        android:layout_height="@dimen/kiloImageSize"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:background="@drawable/clickable_background_borderless_inverse"
+        android:clickable="true"
+        android:contentDescription="@string/announcement"
+        android:focusable="true"
+        android:src="@drawable/ic_baseline_person_pin"
+        app:tint="?attr/colorOnPrimary" />
+
+    <TextView
+        android:id="@+id/announcementCardAuthorName"
+        style="@style/AnnouncementAuthorTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="@dimen/kiloSize"
+        android:layout_toEndOf="@id/announcementCardImageView" />
+
+    <TextView
+        style="@style/AnnouncementTextTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="@dimen/miniSize"
+        android:layout_marginTop="@dimen/microSize"
+        android:layout_toEndOf="@id/announcementCardAuthorName" />
+
+    <TextView
+        android:id="@+id/announcementCardAuthorRank"
+        style="@style/AnnouncementAuthorRankTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/announcementCardAuthorName"
+        android:layout_marginStart="@dimen/kiloSize"
+        android:layout_toEndOf="@id/announcementCardImageView" />
+
+    <TextView
+        android:id="@+id/announcementCardText"
+        style="@style/AnnouncementTextTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/announcementCardImageView"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="@dimen/size" />
+
+    <TextView
+        android:id="@+id/announcementStartDateTime"
+        style="@style/AnnouncementAuthorTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@id/announcementCardText" />
+
+    <TextView
+        android:id="@+id/announcementEndDateTime"
+        style="@style/AnnouncementAuthorTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@id/announcementStartDateTime" />
+
+</merge>

@@ -5,7 +5,6 @@ import android.app.Application
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import ru.labore.eventeger.data.AppRepository
-import ru.labore.eventeger.data.db.entities.AuthoredEntity
 import ru.labore.eventeger.data.db.entities.CommentEntity
 import ru.labore.eventeger.ui.adapters.DetailedCommentRecyclerViewAdapter
 import ru.labore.eventeger.ui.base.DetailedAuthoredEntityViewModel
@@ -95,7 +94,9 @@ class DetailedCommentViewModel(app: Application) : DetailedAuthoredEntityViewMod
                         val previousSize = itemCount
 
                         currentOffset += newComments.size
-                        items.addAll(newComments.values)
+                        items.addAll(newComments.values.sortedByDescending {
+                            it.createdAt
+                        })
 
                         pushItems(
                             previousSize,
@@ -108,8 +109,8 @@ class DetailedCommentViewModel(app: Application) : DetailedAuthoredEntityViewMod
             current?.join()
         }
 
-        if (currentOffset > fragment.item.commentCount) {
-            fragment.item.commentCount = currentOffset
+        if (currentOffset > fragment.item.commentsCount) {
+            fragment.item.commentsCount = currentOffset
             appRepository.persistFetchedAuthoredEntity(fragment.item)
         }
     }

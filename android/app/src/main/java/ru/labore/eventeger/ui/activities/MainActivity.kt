@@ -56,6 +56,8 @@ class MainActivity : BaseActivity() {
             intent
         )
 
+        bottomNav.selectedItemId = R.id.inbox
+
         controller.observe(this, {
             setupActionBarWithNavController(it)
         })

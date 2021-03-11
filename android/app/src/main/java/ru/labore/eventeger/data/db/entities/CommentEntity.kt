@@ -15,7 +15,7 @@ class CommentEntity(
     @PrimaryKey
     override val id: Int,
     override val authorId: Int,
-    override var commentCount: Int,
+    override var commentsCount: Int,
     val announcementId: Int,
     val replyTo: Int?,
     override val text: String,

@@ -77,7 +77,9 @@ class InboxViewModel(
 
                     reachedEnd = false
                     items.clear()
-                    items.addAll(newAnnouncements.values)
+                    items.addAll(newAnnouncements.values.sortedByDescending {
+                        it.createdAt
+                    })
                     currentOffset = items.size
 
                     refreshItems(
@@ -103,7 +105,9 @@ class InboxViewModel(
                         val previousSize = itemCount
 
                         currentOffset += newAnnouncements.size
-                        items.addAll(newAnnouncements.values)
+                        items.addAll(newAnnouncements.values.sortedByDescending {
+                            it.createdAt
+                        })
 
                         pushItems(
                             previousSize,

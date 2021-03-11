@@ -135,7 +135,7 @@ abstract class DetailedAuthoredEntityViewModel(
 
                 currentText = ""
 
-                fragment.item.commentCount += 1
+                fragment.item.commentsCount += 1
 
                 appRepository.persistFetchedAuthoredEntity(fragment.item)
 

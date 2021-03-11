@@ -29,31 +29,31 @@ class LoginActivity : BaseActivity() {
                         this,
                         getString(R.string.enter_username),
                         Toast.LENGTH_SHORT
-                    ).show()
+                    ).show() // Уведомление о неверности данных
                     false
                 }
                 regex.containsMatchIn(username) -> {
-                    Toast.makeText(
+                                        Toast.makeText(
                         this,
                         getString(R.string.username_incorrect),
                         Toast.LENGTH_SHORT
-                    ).show()
+                    ).show() // Уведомление о неверности данных
                     false
                 }
                 password.isEmpty() -> {
-                    Toast.makeText(
+                                        Toast.makeText(
                         this,
                         getString(R.string.enter_password),
                         Toast.LENGTH_SHORT
-                    ).show()
+                    ).show() // Уведомление о неверности данных
                     false
                 }
                 password.length < 8 -> {
-                    Toast.makeText(
+                                        Toast.makeText(
                         this,
                         getString(R.string.password_too_short),
                         Toast.LENGTH_SHORT
-                    ).show()
+                    ).show() // Уведомление о неверности данных
                     false
                 }
                 else -> {
@@ -62,7 +62,7 @@ class LoginActivity : BaseActivity() {
             }
 
             if (isCorrect) {
-                apiRequestButton.isEnabled = false
+                                apiRequestButton.isEnabled = false
 
                 GlobalScope.launch(Dispatchers.Main) {
                     try {

@@ -11,9 +11,7 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.children
-import androidx.core.view.get
 import androidx.fragment.app.viewModels
 import kotlinx.android.synthetic.main.fragment_create.*
 import org.threeten.bp.ZoneId
@@ -25,9 +23,14 @@ import ru.labore.eventeger.ui.fragments.TimePickerFragment
 import ru.labore.eventeger.ui.views.LabelledCheckbox
 import ru.labore.eventeger.ui.views.ParentCheckbox
 import ru.labore.eventeger.utils.hideKeyboard
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.arrayListOf
+import kotlin.collections.forEach
+import kotlin.collections.hashSetOf
+import kotlin.collections.set
 
 class CreateFragment : BaseFragment() {
-
     companion object Derived {
         private val timeFilter = IntentFilter()
 
@@ -161,13 +164,8 @@ class CreateFragment : BaseFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         createEvent.switchListener = {
-            println(it)
             isEvent = it
         }
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
 
         val minDate = ZonedDateTime.of(
             2021,
@@ -191,16 +189,6 @@ class CreateFragment : BaseFragment() {
 
             createRecipientsLoading?.visibility = View.GONE
             createRecipientsProgressBar?.visibility = View.GONE
-        }
-
-        createFragmentSubmitButton.setOnClickListener {
-            it.visibility = View.GONE
-            createFragmentProgressBar.visibility = View.VISIBLE
-
-            createAnnouncement {
-                it.visibility = View.VISIBLE
-                createFragmentProgressBar.visibility = View.GONE
-            }
         }
 
         createFragmentScrollView?.setOnClickListener { hideKeyboard() }
@@ -232,55 +220,24 @@ class CreateFragment : BaseFragment() {
     override fun onResume() {
         super.onResume()
 
+        createFragmentSubmitButton.setOnClickListener {
+            println("I'm clicked")
+            it.visibility = View.GONE
+            createFragmentProgressBar.visibility = View.VISIBLE
+
+            createAnnouncement {
+                it.visibility = View.VISIBLE
+                createFragmentProgressBar.visibility = View.GONE
+            }
+        }
+
         activity?.registerReceiver(timeChangedReceiver, timeFilter)
     }
 
-    private fun writeHeader(
-        header: TextView?,
-        nullId: Int,
-        futureFmtId: Int,
-        pastFmtId: Int,
-        date: ZonedDateTime?
-    ) {
-        if (header != null) {
-            header.text =
-                if (date == null) {
-                    resources.getString(
-                        nullId
-                    )
-                } else {
-                    val now = viewModel.appRepository.zonedNow()
+    override fun onPause() {
+        super.onPause()
 
-                    resources.getString(
-                        if (date.isBefore(now) || date.isEqual(now)) pastFmtId else futureFmtId,
-                        if (date.dayOfMonth < 10) "0${date.dayOfMonth}" else date.dayOfMonth,
-                        if (date.monthValue < 10) "0${date.monthValue}" else date.monthValue,
-                        date.year,
-                        if (date.hour < 10) "0${date.hour}" else date.hour,
-                        if (date.minute < 10) "0${date.minute}" else date.minute
-                    )
-                }
-        }
-    }
-
-    private fun writeStartHeader() {
-        writeHeader(
-            createStartHeader,
-            R.string.starts_now,
-            R.string.starts_at_fmt,
-            R.string.started_at_fmt,
-            startDateTime
-        )
-    }
-
-    private fun writeEndHeader() {
-        writeHeader(
-            createEndHeader,
-            R.string.never_ends,
-            R.string.ends_at_fmt,
-            R.string.ended_at_fmt,
-            endDateTime
-        )
+        activity?.unregisterReceiver(timeChangedReceiver)
     }
 
     private fun createAnnouncement(
@@ -312,24 +269,24 @@ class CreateFragment : BaseFragment() {
                 val act = activity
 
                 if (act != null)
-                launch {
-                    if (isEvent)
-                        viewModel.createAnnouncement(
-                            act,
-                            text,
-                            startDateTime,
-                            endDateTime
-                        )
-                    else
-                        viewModel.createAnnouncement(
-                            act,
-                            text
-                        )
+                    launch {
+                        if (isEvent)
+                            viewModel.createAnnouncement(
+                                act,
+                                text,
+                                startDateTime,
+                                endDateTime
+                            )
+                        else
+                            viewModel.createAnnouncement(
+                                act,
+                                text
+                            )
 
-                    createAnnouncementEditText?.setText("")
+                        createAnnouncementEditText?.setText("")
 
-                    afterAll()
-                }
+                        afterAll()
+                    }
             }
         }
     }
@@ -452,9 +409,51 @@ class CreateFragment : BaseFragment() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
+    private fun writeHeader(
+        header: TextView?,
+        nullId: Int,
+        futureFmtId: Int,
+        pastFmtId: Int,
+        date: ZonedDateTime?
+    ) {
+        if (header != null) {
+            header.text =
+                if (date == null) {
+                    resources.getString(
+                        nullId
+                    )
+                } else {
+                    val now = viewModel.appRepository.zonedNow()
 
-        activity?.unregisterReceiver(timeChangedReceiver)
+                    resources.getString(
+                        if (date.isBefore(now) || date.isEqual(now)) pastFmtId else futureFmtId,
+                        if (date.dayOfMonth < 10) "0${date.dayOfMonth}" else date.dayOfMonth,
+                        if (date.monthValue < 10) "0${date.monthValue}" else date.monthValue,
+                        date.year,
+                        if (date.hour < 10) "0${date.hour}" else date.hour,
+                        if (date.minute < 10) "0${date.minute}" else date.minute
+                    )
+                }
+        }
+    }
+
+    private fun writeStartHeader() {
+        writeHeader(
+            createStartHeader,
+            R.string.starts_now,
+            R.string.starts_at_fmt_verbose,
+            R.string.started_at_fmt_verbose,
+            startDateTime
+        )
+    }
+
+    private fun writeEndHeader() {
+        writeHeader(
+            createEndHeader,
+            R.string.never_ends,
+            R.string.ends_at_fmt_verbose,
+            R.string.ended_at_fmt_verbose,
+            endDateTime
+        )
     }
 }

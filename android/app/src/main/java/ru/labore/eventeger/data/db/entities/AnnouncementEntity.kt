@@ -15,10 +15,11 @@ data class AnnouncementEntity(
     @PrimaryKey
     override val id: Int,
     override val authorId: Int,
-    override var commentCount: Int,
+    override var commentsCount: Int,
     override val text: String,
     override var createdAt: ZonedDateTime,
     override var updatedAt: ZonedDateTime,
+    val isEvent: Boolean,
     var startsAt: ZonedDateTime? = null,
     var endsAt: ZonedDateTime? = null
 ) : AuthoredEntity, Parcelable

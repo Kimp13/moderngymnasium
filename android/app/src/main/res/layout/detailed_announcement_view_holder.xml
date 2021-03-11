@@ -4,42 +4,5 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="@dimen/size">
-
-    <ImageView
-        android:id="@+id/announcementDetailedImageView"
-        android:layout_width="@dimen/kiloImageSize"
-        android:layout_height="@dimen/kiloImageSize"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:background="@drawable/clickable_background_borderless_inverse"
-        android:contentDescription="@string/announcement"
-        android:src="@drawable/ic_baseline_person_pin"
-        app:tint="?attr/colorOnPrimary" />
-
-    <TextView
-        android:id="@+id/announcementDetailedAuthorName"
-        style="@style/AnnouncementAuthorTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="@dimen/kiloSize"
-        android:layout_toEndOf="@id/announcementDetailedImageView" />
-
-    <TextView
-        android:id="@+id/announcementDetailedAuthorRank"
-        style="@style/AnnouncementAuthorRankTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/announcementDetailedAuthorName"
-        android:layout_marginStart="@dimen/kiloSize"
-        android:layout_toEndOf="@id/announcementDetailedImageView" />
-
-    <TextView
-        android:id="@+id/announcementDetailedText"
-        style="@style/AnnouncementTextTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/announcementDetailedImageView"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="@dimen/size" />
+    <include layout="@layout/base_announcement_view_holder" />
 </RelativeLayout>

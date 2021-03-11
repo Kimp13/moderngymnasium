@@ -32,6 +32,8 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope, DIAware {
         super.onCreate(savedInstanceState)
 
         job = Job()
+
+
     }
 
     override fun onDestroy() {

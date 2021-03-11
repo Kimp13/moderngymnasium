@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!DOCTYPE resources [
-    <!ENTITY app_name "Гимназия в лучах славы">
+    <!ENTITY app_name "Eventeger">
     <!ENTITY sign_in  "Войти">
     ]>
 
@@ -61,10 +61,10 @@
     <string name="now">Сейчас</string>
     <string name="starts_now">Начинается сейчас</string>
     <string name="never_ends">Никогда не кончается</string>
-    <string name="starts_at_fmt">Начинается %1$s.%2$s.%3$d в %4$s:%5$s</string>
-    <string name="ends_at_fmt">Оканчивается %1$s.%2$s.%3$d в %4$s:%5$s</string>
-    <string name="started_at_fmt">Началось %1$s.%2$s.%3$d в %4$s:%5$s</string>
-    <string name="ended_at_fmt">Кончилось %1$s.%2$s.%3$d в %4$s:%5$s</string>
+    <string name="starts_at_fmt_verbose">Начинается %1$s.%2$s.%3$d в %4$s:%5$s</string>
+    <string name="ends_at_fmt_verbose">Оканчивается %1$s.%2$s.%3$d в %4$s:%5$s</string>
+    <string name="started_at_fmt_verbose">Началось %1$s.%2$s.%3$d в %4$s:%5$s</string>
+    <string name="ended_at_fmt_verbose">Кончилось %1$s.%2$s.%3$d в %4$s:%5$s</string>
     <string name="comment">Комментарий</string>
     <string name="comments">Комментарии</string>
     <string name="comment_settings">Настройки комментария</string>
@@ -75,4 +75,9 @@
     <string name="comment_text">Текст комментария</string>
     <string name="wait">Подождите...</string>
     <string name="there_is_nothing_here_yet">Тут пока ничего нет 😞</string>
+    <string name="starts_at_fmt">Начинается %s</string>
+    <string name="ends_at_fmt">Оканчивается %s</string>
+    <string name="started_at_fmt">Началось %s</string>
+    <string name="ended_at_fmt">Законилось %s</string>
+    <string name="ongoing">Уже проходит</string>
 </resources>
